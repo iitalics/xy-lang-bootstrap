@@ -1,0 +1,155 @@
+
+
+
+let symbol_escape_char
+       ("_") = "__"
+let .. ("#") = "_h"
+let .. ("?") = "_q"
+let .. (c) = c
+
+let symbol_escape ("", out) = out
+let .. (str, out) =
+	symbol_escape(tl str, out + symbol_escape_char(hd str))
+
+
+let function_name (sym) = "function_" + symbol_escape(sym, "")
+let lambda_name (n) = "lambda_" + (n -> string)
+
+
+
+
+let function_args_code () =
+	"(xy_value_t* o, xy_arg_list_t* r,\n\t\txy_closure_t* p, xy_err_string_t* e)"
+
+
+
+
+let compiler_make () =
+	{ lambda_queue = [],
+	  closure = (),
+	  l = 0	}
+	-> compiler_reset_function
+;
+
+let compiler_fail_code () =
+	"\t\tgoto fail;\n" ; TODO: line #
+
+let compiler_reset_function (compiler) =
+	compiler + { a = 0,
+	  a_max = 0,
+	  c = 0,
+	  args_case = false,
+	  fail_case = false,
+	  bad_args_case = false }
+;
+
+let compiler_closure_add (compiler, name) =
+	with (index = compiler::c + 1)
+		compiler +
+			{ closure = compiler::closure + { vals =
+				[{ name = name, index = index }] +
+				compiler::closure::vals } }
+
+let compiler_closure_remove (compiler, n) =
+	compiler +
+		{ closure = compiler::closure + {
+			vals = compiler::closure::vals .. n } }
+
+			
+let compiler_closure_push_args (compiler, arg_names) =
+	compiler +
+		{ closure = { parent = compiler::closure, vals =
+			(0 .. (length(arg_names) - 1)) $
+				i = { name = arg_names . i, index = i } } }
+
+let compiler_closure_push (compiler) =
+	compiler +
+		{ closure = { 
+			vals = [],
+			parent = compiler::closure } }
+
+let compiler_closure_pop (compiler) =
+	compiler + { closure = compiler::closure::parent }
+
+
+let closure_find ((), name, v) = [-1, 0]
+let .. (c, name, ()) =
+	closure_find(c, name, c::vals, 0)
+let .. (c, name, []) =
+	with ([i, d] = closure_find(c::parent, name))
+		[i, d + 1]
+let .. (c, name, v : (hd v)::name == name) =
+	[(hd v)::index, 0]
+let .. (c, name, v) =
+	closure_find(c, name, tl v)
+
+let compiler_a_push (compiler, n) =
+	with (a = compiler::a + n)
+		[1 .. n $ i = "a + " + (a + i - n - 1),
+		compiler +
+			{ a = a,
+			  a_max = max(compiler::a_max, a) }]
+
+let compiler_a_pop (compiler, n) =
+	compiler +
+		{ a = max(0, compiler::a - n) }
+;
+
+
+
+
+let compiler_push_lambda (compiler, func) =
+	with (l = compiler::l + 1,
+			func = func + { qname = lambda_name(l), parent = compiler::closure },
+			queue = [func] + compiler::lambda_queue)
+		[func, compiler + 
+			{ lambda_queue = queue, l = l }]
+
+
+
+;   PRELUDE / PROLOGUE
+
+
+let compiler_a_prelude (0) = ""
+let .. (n) =
+	"\txy_value_t a[" + n + "];\n" +
+	(n -> @{
+		let (1) = "\txy_value_set_void(a);\n"
+		let (n) = "\txy_clear_values(a, " +n + ");\n" }) +
+	"\txy_closure_set_a(c, a, " + n + ");\n"
+
+let compiler_c_prelude (n) =
+	"\txy_closure_t* c = xy_closure_create(" + n + ", p);\n" +
+	or_nil(n > 0, "\txy_closure_copy_args(c, r);\n") +
+	"\txy_gc_push_closure(c);\n"
+
+let compiler_z_prelude (false) = ""
+let .. (true) =
+	"\txy_arg_list_t z;\n"
+	
+	
+	
+
+let compiler_c_prologue (n) =
+	"\tc->a.size = 0;\n" +
+	"\txy_gc_pop_closure();\n"
+
+
+
+
+let compiler_prelude (compiler) =
+	compiler_c_prelude(compiler::c) +
+	compiler_a_prelude(compiler::a_max) +
+	compiler_z_prelude(compiler::args_case)
+;
+
+let compiler_prologue (compiler) =
+	with (prol = compiler_c_prologue(compiler::c))
+		"success:\n" +
+		prol +
+		"\txy_gc_collect_retain(o);\n"
+		"\treturn true;\n" +
+		or_nil(compiler::fail_case,
+			"fail: // :( \n" + prol +
+			"\txy_gc_collect();\n"
+			"\treturn false;\n")

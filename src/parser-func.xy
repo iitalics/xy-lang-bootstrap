@@ -1,0 +1,65 @@
+
+; #------------ function declaration -----------#
+
+let parse_func_body (toks : (hd toks)::tok == ")") =
+	parse_func_body_finish(tl toks, [])
+let .. (toks) =
+	parse_func_body_iter(toks, [])
+
+let parse_func_arg (toks : (hd toks)::tok == "<symbol>", nargs) =
+	with (name = (hd toks)::sym, toks = tl toks)
+	with ([cond, toks] = (hd toks)::tok -> @{
+			let (":") =
+				parse_exp(tl toks)
+			
+			let (op -> token_is_binary?) =
+				with ([right, toks] = parse_exp(tl toks))
+				with (left = expression_closure_index(nargs, 0))
+					[expression_binary(left, op, right), toks]
+				
+			let () =
+				[(), toks] })
+		[{ name = name, cond = cond }, toks]
+let .. (toks : (hd toks)::tok -> token_is_expression?, nargs) =
+	with (left = expression_closure_index(nargs, 0))
+	with ([right, toks] = parse_exp(toks))
+		[{ name = "", cond =
+			expression_binary(left, "==", right) }, toks]
+let .. (toks, nargs) =
+	token_die(hd toks, "expected expression or <symbol>, got '" + (hd toks)::tok + "'")
+
+let parse_func_body_iter (toks, args) =
+	with ([arg, toks] = parse_func_arg(toks, args -> length),
+			args = args + [arg])
+		((hd toks)::tok -> @{
+			let (",") =
+				parse_func_body_iter
+			let (")") =
+				parse_func_body_finish
+			let (t) =
+				token_die(hd toks, "expected ',' or ')', got '" + t + "'") })
+		(tl toks, args)
+let parse_func_body_finish (toks, args) =
+	; TODO parse 'flags'
+	with ([_, toks] = parse_expect("=", toks))
+	with ([body, toks] = parse_exp(toks))
+		[{ args = args,
+			body = body },
+		toks]
+;
+let parse_declaration (toks, prev_name) =
+	with ([_, toks] = parse_expect("let", toks))
+	with (name = (hd toks)::tok -> @{
+			let ("..") =
+				prev_name -> @{
+					let (()) =
+						token_die(hd toks,
+							"cannot recall previous function name (first in environment)")
+					let (name) = name }
+
+			let ("<symbol>") = (hd toks)::sym
+			let () = parse_unexpect(hd toks) })
+	with ([_, toks] = parse_expect("(", tl toks))
+	with ([body, toks] = parse_func_body(toks, []))
+		[name, body, toks]
+;

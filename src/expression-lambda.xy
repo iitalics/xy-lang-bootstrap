@@ -1,0 +1,1 @@
+let expression_lambda (bodies) =	with (func = { name = "", bodies = bodies })		@(o, compiler) =			with ([func, compiler] = compiler_push_lambda(compiler, func))				["\txy_value_set_function(" + o + ", " + func::qname + ", c);\n",				compiler]

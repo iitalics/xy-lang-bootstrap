@@ -1,0 +1,117 @@
+;   argument  =  { name = "", condition = <exp> or void }
+;  func_body  =  { args = [<argument>...], body = <exp> }
+;   function  =  { name = "", bodies = [<func_body>...], qname = "" }
+;        env  =  [<function>...]
+
+
+
+let func_body_args_no_cond? (a) =
+	all?(@(x) = x::cond -> void?, a)
+	
+let func_body_args_compile (args -> func_body_args_no_cond?, compiler) =
+	["", "", compiler]
+let .. (args, compiler) =
+	foldl(@{
+			let (_, arg : arg::cond == ()) = _
+			let (_, arg) =
+				with ([all, brackets, compiler] = _)
+				with ([z, compiler] = compiler_a_push(compiler, 1))
+				with ([code, compiler] = arg::cond(hd z, compiler))
+				with (compiler = compiler_a_pop(compiler, 1))
+					[all + code +
+						"\tif (xy_value_condition(" + hd z + ")) {\n",
+					brackets + "\t}\n",
+					compiler] },
+		["", "", compiler], args)
+	
+let func_body_compile (body, compiler) =
+	with (compiler = compiler_closure_push_args(compiler,
+						body::args $ a = a::name))
+	with ([args_code, args_brackets, compiler] =
+			func_body_args_compile(body::args, compiler))
+	with ([body_code, compiler] = body::body("o", compiler))
+	with (compiler = compiler -> compiler_closure_pop)
+		[args_code + body_code +
+			or_nil(!(body::args -> func_body_args_no_cond?), "\tgoto success;\n") +
+			args_brackets, compiler]
+
+let function_max_arguments (func) =
+	foldl(max, 0, func::bodies $ b = b::args -> length)
+
+let function_compile_all_bodies (bodies, compiler) =
+	foldl(@(_, body) =
+			with ([all, compiler] = _)
+			with ([code, compiler] = func_body_compile(body, compiler))
+				[all + code, compiler],
+		["", compiler], bodies)
+
+let function_bad_args (func) =
+	"\n\txy_die(e, \"no suitable overload to " +
+		(func::name -> @{
+			let ("") = "lambda function"
+			let (n) = "function '" + n + "'" }) +
+		" found\");\n"
+		"\tgoto fail;\n"
+
+let compiler_compile_lambdas (compiler :
+		compiler::lambda_queue == [], all) =
+	[all, compiler]
+let .. (compiler, all) =
+	with ([lambda, queue..] = compiler::lambda_queue,
+			compiler = compiler + { lambda_queue = queue })
+	with ([code, compiler] = function_compile(lambda, compiler))
+		compiler_compile_lambdas(compiler, all + code)
+		
+	
+let function_compile (func, compiler) =
+	with (bad_args = !any?(func_body_args_no_cond?,
+									func::bodies $ b = b::args))
+	with (max_args = func -> function_max_arguments)
+	with (compiler = (compiler -> compiler_reset_function) +
+			{ closure = func::parent, c = max_args, bad_args_case = bad_args })
+	with (qual_name = func::qname -> @{
+			let (()) = function_name(func::name)
+			let (q) = q
+		})
+	with ([all_bodies, compiler] = function_compile_all_bodies(func::bodies, compiler))
+	with (code =
+			"bool " + qual_name + " " + function_args_code() + "\n{\n" +
+			compiler_prelude(compiler) +
+			"\n" + ; "\t/** body **/\n" +
+			all_bodies +
+			or_nil(compiler::bad_args_case, function_bad_args(func)) +
+			"\n" + ; "\t/** prologue **/\n" +
+			compiler_prologue(compiler) +
+			"}\n\n\n")
+	with ([extra, compiler] = compiler_compile_lambdas(compiler, ""))
+		[extra + code,
+		 compiler]
+;
+
+
+
+
+
+
+
+let env_add (body, name, []) =
+;	display("** creating new function '", name, "'\n") +
+	[{ name = name, 
+		bodies = [body] }]
+let .. (body, name,
+		env : (hd env)::name == name) =
+	with (func = hd env)
+;		display("** adding overload to function '", name, "'\n") +
+		[{ name = name,
+			bodies = func::bodies + [body] }] + tl env
+let .. (body, name, env) =
+	[hd env] +
+	env_add(body, name, tl env)
+;
+
+let env_compile (env, compiler) =
+	foldl(@(_, func) =
+			with ([all, compiler] = _)
+			with ([code, compiler] = function_compile(func, compiler))
+				[all + code, compiler],
+		["", compiler], env)

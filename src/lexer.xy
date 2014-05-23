@@ -1,0 +1,147 @@
+let is_digit? (a) =
+	indexof("0123456789", a) >= 0
+let is_space? (a) =
+	indexof(" \t\n\r\0", a) >= 0
+let is_symbol? (a) =
+	indexof("abcdefghijklmnopqrstuvwxyz"
+	        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+			"0123456789_#?", a) >= 0
+;
+
+
+let lexer_keywords () =
+	[ "let", "use", "with", "true", "false", "and", "or", "hd", "tl" ]
+
+let lexer_doubles () =
+	[ "<=", ">=", "==", "!=", "..", "->", "::" ]
+
+
+let lexer_create (str, fn) =
+	{ line = 1, filename = fn, str = str }
+;
+
+let lexer_fd (lex) =
+	{ fd_line = lex::line, fd_file = lex::filename }
+
+let lexer_fd_text (tok : tok::fd_file == ()) =
+	"[line " + tok::fd_line + "]: "
+let .. (tok) =
+	"[\"" + tok::fd_file + "\" line " + tok::fd_line + "]: "
+;
+
+
+let lexer_trim (lex) =
+	hd lex::str -> @{
+		let (";") =
+			lexer_trim_comment(lex)
+		let ("\n") =
+			lex + { line = lex::line + 1,
+					str = tl lex::str } -> lexer_trim
+		let (s -> is_space?) =
+			lex + { str = tl lex::str } -> lexer_trim
+		let (s) = lex }
+;
+
+let lexer_trim_comment (lex : lex::str == "" or
+                              hd lex::str == "\n") =
+	lexer_trim(lex)
+let .. (lex) =
+	lexer_trim_comment(lex + { str = tl lex::str })
+
+
+let lexer_parse_symbol (str : hd str -> is_symbol?) =
+	with (c = hd str,
+			[s, str] = lexer_parse_symbol(tl str))
+		[ c + s, str ]
+let .. (str) = [ "", str ]
+;
+
+let lexer_parse_number (str, ()) =
+	lexer_parse_number(str, 0)
+let .. (str : hd str -> is_digit?, n) =
+	lexer_parse_number(tl str,
+				(n * 10) + (hd str -> number))
+let .. (str, n) = [n, str]
+
+
+let lexer_parse_string (lex) =
+	lexer_parse_string_iter(lex + { str = tl lex::str },
+		hd lex::str, "")
+
+let lexer_parse_string_iter (lex, q, buf) = 
+	with ([c, func] = hd lex::str -> @{
+			let ("") =
+				token_die({ line = lex::line }, 
+					"expected closing " + q + " before <eof>")
+			let (c == q) =
+				["", @(lex, q, buf) =
+						[buf, lex] ]
+			let (c) =
+				[c, lexer_parse_string_iter] })
+		func(lex + { str = tl lex::str }, q, buf + c)
+
+
+
+let lexer_advance (lex : hd lex::str -> is_space?) =
+	lex -> lexer_trim -> lexer_advance
+
+let .. (lex : lex::str == "") =
+	[{ tok = "<eof>" } + lexer_fd(lex), lex]
+
+let .. (lex : hd lex::str -> is_digit?) =
+	with ([n, str] = lexer_parse_number(lex::str))
+		[{ tok = "<number>", num = n } + lexer_fd(lex),
+		lex + { str = str }]
+
+let .. (lex : hd lex::str -> is_symbol?) =
+	with ([s, str] = lexer_parse_symbol(lex::str))
+	with (kw = indexof(lexer_keywords(), s))
+		kw -> @{
+			let (-1) =
+				[{ tok = "<symbol>", sym = s } + lexer_fd(lex),
+				lex + { str = str }]
+			let () =
+				[{ tok = s } + lexer_fd(lex),
+				lex + { str = str }] }
+
+let .. (lex : hd lex::str == "\"") =
+	with ([s, lex] = lexer_parse_string(lex))
+		[{ tok = "<string>", str = s } + lexer_fd(lex),
+		lex]
+
+let .. (lex) =
+	with (db = hd lex::str + lex::str . 1)
+		indexof(lexer_doubles(), db) -> @{
+			let (-1) =
+				[{ tok = hd lex::str } + lexer_fd(lex),
+				lex + { str = tl lex::str }]
+			let () =
+				[{ tok = db } + lexer_fd(lex),
+				lex + { str = lex::str .. 2 }] }
+
+
+
+let lexer_parse_all (lex, ()) =
+	lexer_parse_all(lex, []) -> reverse
+let .. (lex, toks) =
+	with ([t, lex] = lex -> lexer_advance)
+		(t::tok -> @{
+			let ("<eof>") =
+				@(lex, toks) = toks
+			let (t) =
+				lexer_parse_all })
+		(lex, [t] + toks)
+
+
+
+let token_is_binary? (tok) =
+	indexof([ "<", "<=", ">", ">=", "==", "!=", "and", "or", "+", "-", "*", "/", "^", ".", "..", "->" ],
+				tok) >= 0
+let token_is_unary? (tok) =
+	indexof([ "-", "!", "hd", "tl" ], tok) >= 0
+let token_is_expression? (tok) =
+	(tok -> token_is_unary?) or
+	indexof([ "<symbol>", "<number>", "<string>", "(", "true", "false" ], tok) >= 0
+let token_die (tok, msg) =
+	die("xy compiler error " + lexer_fd_text(tok) + "\n"
+	    "    " + msg)

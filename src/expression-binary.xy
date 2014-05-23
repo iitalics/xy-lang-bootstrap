@@ -1,0 +1,58 @@
+
+
+let binary_op_string
+       ("+")   = "xy_oper_pls"
+let .. ("-")   = "xy_oper_min"
+let .. ("*")   = "xy_oper_mul"
+let .. ("/")   = "xy_oper_div"
+let .. ("^")   = "xy_oper_exp"
+let .. (">")   = "xy_oper_gr"
+let .. ("<")   = "xy_oper_ls"
+let .. ("..")  = "xy_oper_seq"
+let .. ("==")  = "xy_oper_eql"
+let .. ("!=")  = "xy_oper_neq"
+let .. (">=")  = "xy_oper_gre"
+let .. ("<=")  = "xy_oper_lse"
+
+let .. ("or")  = "xy_oper_or"
+let .. ("and") = "xy_oper_and"
+
+
+let unary_op_string
+	   ("!")  = "xy_u_oper_not"
+let .. ("-")  = "xy_u_oper_neg"
+let .. ("hd") = "xy_u_oper_hd"
+let .. ("tl") = "xy_u_oper_tl"
+
+
+
+
+let expression_binary (a, "->", b) =
+	expression_call(b, [a])
+; let .. (a, "and", b) =
+; let .. (a, "or", b) =
+; let .. (a, "==", b)
+let .. (a, op, b) =
+	@(o, compiler) =
+		with ([z, compiler] = compiler_a_push(compiler, 2))
+		with ([a_code, compiler] = a(z . 0, compiler))
+		with ([b_code, compiler] = b(z . 1, compiler))
+		with (compiler = compiler_a_pop(compiler, 2))
+			[a_code + b_code +
+				"\tif (!" + binary_op_string(op) +
+				"(" + o + ", " + (z . 0) + ", " + (z . 1) + ", e))\n" +
+				compiler_fail_code(),
+			compiler + { fail_case = true }]
+;
+
+
+let expression_unary (op, a) =
+	@(o, compiler) =
+		with ([z, compiler] = compiler_a_push(compiler, 1))
+		with ([code, compiler] = a(hd z, compiler))
+		with (compiler = compiler_a_pop(compiler, 1))
+			[code +
+				"\tif (!" + unary_op_string(op) +
+				"(" + o + ", " + hd z + ", e))\n" +
+				compiler_fail_code(),
+			compiler + { fail_case = true }]

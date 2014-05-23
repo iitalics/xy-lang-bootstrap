@@ -1,0 +1,38 @@
+
+
+
+
+let syard_create (init) =
+	{ ops = [], stack = [init] }
+
+
+let syard_precedence (op) =
+	with (p = [ ["and", "or"],
+	            ["<", ">", "<=", ">=", "==", "!="],
+				["->"],
+	            "+-", "*/", [".", ".."], ["^"] ])
+		hd (1 .. length(p) $ t
+				: indexof(p . (t - 1), op) >= 0)
+
+let syard_push (syard, op, e) =
+	with (syard = syard_push_op(syard, op))
+		syard + { stack = [e] + syard::stack }
+
+let syard_pop (syard) =
+	with ([op, ops..] = syard::ops,
+			[b, a, stack..] = syard::stack)
+		{ ops = ops,
+		  stack = [expression_binary(a, op, b)] + stack }
+
+let syard_push_op (syard, op :
+		syard::ops == [] or
+			syard_precedence(hd syard::ops) <
+				syard_precedence(op)) =
+	syard + { ops = [op] + syard::ops }
+let .. (syard, op) =
+	syard_push_op(syard -> syard_pop, op)
+
+let syard_finish (syard : syard::ops == []) =
+	hd syard::stack
+let .. (syard) =
+	syard_finish(syard -> syard_pop)

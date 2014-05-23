@@ -1,0 +1,23 @@
+
+
+
+
+let expression_call (func, args) =
+	@(o, compiler) =
+		with (accu_size = 1 + length(args))
+		with ([accu, compiler] = compiler_a_push(compiler, accu_size))
+		with ([func_code, compiler] = func(hd accu, compiler))
+		with ([args_code, compiler] =
+			foldl(@(_, arg) =
+					with ([all, compiler, accu] = _)
+					with ([code, compiler] = arg(hd accu, compiler))
+						[all + code, compiler, tl accu],
+				["", compiler, tl accu], args))
+		with (compiler = compiler_a_pop(compiler, accu_size))
+			[func_code + args_code + 
+				"\tz.size = " + length(args) + ";\n" +
+				or_nil(length(args) > 0, "\tz.values = " + (hd tl accu) + ";\n") +
+				"\tif (!xy_call(" + o + ", " + (hd accu) + ", &z, e))\n" +
+				compiler_fail_code(),
+			compiler + 
+				{ args_case = true, fail_case = true }]

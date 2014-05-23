@@ -1,0 +1,38 @@
+
+
+let parse_lambda (toks : (hd toks)::tok == "(") =
+	with ([body, toks] = parse_func_body(tl toks))
+		[[body] -> expression_lambda, toks]
+
+let .. (toks : (hd toks)::tok == "{") =
+	parse_lambda_big(tl toks, [])
+
+
+let parse_lambda_big (toks : (hd toks)::tok == "}", bodies) =
+	[bodies -> expression_lambda, tl toks]
+
+let .. (toks : (hd toks)::tok == "let", bodies) =
+	with ([_, toks] = parse_expect("(", tl toks))
+	with ([body, toks] = parse_func_body(toks))
+		parse_lambda_big(toks, bodies + [body])
+
+let .. (toks, bodies) =
+	parse_unexpect(hd toks)
+		
+		
+;
+
+
+
+; `< 3  == (@(x) = x < 3)
+
+let parse_lambda_mini (toks : (hd toks)::tok -> token_is_binary?) = 
+	with (op = (hd toks)::tok)
+	with ([right, toks] = parse_exp(tl toks))
+	with (left = expression_closure_index(0, 0))
+	with (body = expression_binary(left, op, right))
+		[ [{ args = [{ name="",cond=() }],
+		     body = body }] -> expression_lambda,
+		toks]
+let .. (toks) =
+	parse_unexpect(hd toks)

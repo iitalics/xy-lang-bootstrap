@@ -1,0 +1,43 @@
+
+
+
+let expression_void () =
+	@(o, compiler) =
+		["\txy_value_set_void(" + o + ");\n",
+		compiler]
+
+let expression_number (tok) =
+	@(o, compiler) =
+		["\txy_value_set_number(" + o + ", " + (tok::num -> string) + ");\n",
+		compiler]
+
+
+let expression_bool (tok) =
+	@(o, compiler) =
+		["\t" +
+			(tok::tok -> @{
+				let ("true")  = "xy_value_set_bool_true"
+				let ("false") = "xy_value_set_bool_false" })
+			+ "(" + o + ");\n",
+		compiler]
+
+let char_escape
+	   ("\n") = "\\n"
+let .. ("\r") = "\\r"
+let .. ("\t") = "\t"
+let .. ("\"") = "\\\""
+let .. ("\\") = "\\\\"
+let .. (c) = c
+
+let str_escape ("", out) = out
+let .. (str, out) =
+	str_escape(tl str,
+		out + char_escape(hd str))
+
+let expression_string (tok) =
+	@(o, compiler) =
+		["\txy_value_set_string_c(" + o + ", "
+			; TODO: escape chars
+			"\"" + str_escape(tok::str, "") + "\""
+			");\n",
+		compiler]

@@ -1,0 +1,26 @@
+
+
+
+let display_ln (msg) =
+	display(msg, "\n")
+
+let reverse (a) =
+	foldl(@(z, x) = [x] + z, [], a)
+
+
+let max (a, b > a) = b
+let .. (a, b) = a
+
+let min (a, b < a) = b
+let .. (a, b) = a
+
+let any? (f, []) = false
+let .. (f, a : f(hd a)) = true
+let .. (f, a) = any?(f, tl a)
+
+let all? (f, []) = true
+let .. (f, a : f(hd a)) = all?(f, tl a)
+let .. (f, a) = false
+
+let or_nil (case, str : case) = str
+let .. (case, str) = ""
