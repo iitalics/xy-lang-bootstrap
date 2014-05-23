@@ -162,6 +162,9 @@ XYLIB bool xy_value_is_type (xy_value_t* value, enum xy_value_type);
 XYLIB const char* xy_value_get_string (xy_value_t*); 
 
 
+XYLIB bool xy_value_is_function (xy_value_t* value, xy_func_ptr_t);
+
+
 /*
 	           void = false
 	       number 0 = false

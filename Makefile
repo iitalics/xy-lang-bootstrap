@@ -5,7 +5,7 @@ CC=gcc
 CFLAGS=-Iclib
 
 LINK=gcc
-LFLAGS=-Lclib -lxy
+LFLAGS=
 
 PROGRAM=test-file.exe
 SOURCE=test-file.xy
@@ -18,9 +18,13 @@ all: $(PROGRAM)
 $(CSOURCE): $(SOURCE)
 	$(XY) $(SOURCE) $(XYFLAGS) -o $(CSOURCE)
 	
-$(PROGRAM): $(COBJECT)
+# TODO fix this linking stuff
+#  it should be: "-Lclib -lxy" instead of "clib/libxy.a"
+$(PROGRAM): bin $(COBJECT)
 	$(LINK) $(LFLAGS) -o $(PROGRAM) $(COBJECT) clib/libxy.a
-	
+
+bin: 
+	mkdir bin
 	
 clean:
 	rm -f $(PROGRAM) $(CSOURCE)

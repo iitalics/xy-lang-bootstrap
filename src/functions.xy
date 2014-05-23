@@ -68,14 +68,14 @@ let function_compile (func, compiler) =
 									func::bodies $ b = b::args))
 	with (max_args = func -> function_max_arguments)
 	with (compiler = (compiler -> compiler_reset_function) +
-			{ closure = func::parent, c = max_args, bad_args_case = bad_args })
-	with (qual_name = func::qname -> @{
-			let (()) = function_name(func::name)
-			let (q) = q
-		})
+			{ closure = func::parent, c = max_args, bad_args_case = bad_args,
+			  func_qual_name = func::qname -> @{
+				let (()) = function_name(func::name)
+				let (q) = q
+				} })
 	with ([all_bodies, compiler] = function_compile_all_bodies(func::bodies, compiler))
 	with (code =
-			"bool " + qual_name + " " + function_args_code() + "\n{\n" +
+			"bool " + compiler::func_qual_name + " " + function_args_code() + "\n{\n" +
 			compiler_prelude(compiler) +
 			"\n" + ; "\t/** body **/\n" +
 			all_bodies +

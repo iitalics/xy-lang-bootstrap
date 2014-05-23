@@ -155,6 +155,15 @@ xy_value_get_string (xy_value_t* v)
 }
 
 
+bool
+xy_value_is_function (xy_value_t* value, xy_func_ptr_t f)
+{
+	return value->type == xy_value_type_function &&
+		value->func.ptr == f;
+}
+
+
+
 xy_string_t*
 xy_string (const char* s)
 {

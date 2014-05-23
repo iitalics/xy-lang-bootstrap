@@ -14,10 +14,24 @@ let expression_call (func, args) =
 						[all + code, compiler, tl accu],
 				["", compiler, tl accu], args))
 		with (compiler = compiler_a_pop(compiler, accu_size))
-			[func_code + args_code + 
+		
+		with (z_code = func_code + args_code + 
 				"\tz.size = " + length(args) + ";\n" +
-				or_nil(length(args) > 0, "\tz.values = " + (hd tl accu) + ";\n") +
+				or_nil(length(args) > 0, "\tz.values = " + (hd tl accu) + ";\n"))
+		with (call_code =
 				"\tif (!xy_call(" + o + ", " + (hd accu) + ", &z, e))\n" +
-				compiler_fail_code(),
-			compiler + 
-				{ args_case = true, fail_case = true }]
+				compiler_fail_code())
+		
+		o -> @{
+			let ("o") =
+				[z_code + 
+					"\tif (xy_value_is_function(" + (hd accu) +
+					", " + compiler::func_qual_name + "))\n"
+					"\t\tgoto tail_call;\n" +
+					call_code,
+				compiler +
+					{ args_case = true, fail_case = true, tail_call_case = hd accu }]
+			let (o) =
+				[z_code + call_code,
+				compiler + 
+					{ args_case = true, fail_case = true }] }

@@ -38,9 +38,11 @@ let compiler_reset_function (compiler) =
 	compiler + { a = 0,
 	  a_max = 0,
 	  c = 0,
+	  func_qual_name = (),
 	  args_case = false,
 	  fail_case = false,
-	  bad_args_case = false }
+	  bad_args_case = false,
+	  tail_call_case = false }
 ;
 
 let compiler_closure_add (compiler, name) =
@@ -110,6 +112,15 @@ let compiler_push_lambda (compiler, func) =
 ;   PRELUDE / PROLOGUE
 
 
+let compiler_z_prelude (false) = ""
+let .. (true) =
+	"\txy_arg_list_t z;\n"
+	
+let compiler_c_prelude (n) =
+	"\txy_closure_t* c = xy_closure_create(" + n + ", p);\n" +
+	or_nil(n > 0, "\txy_closure_copy_args(c, r);\n") +
+	"\txy_gc_push_closure(c);\n"
+
 let compiler_a_prelude (0) = ""
 let .. (n) =
 	"\txy_value_t a[" + n + "];\n" +
@@ -118,15 +129,9 @@ let .. (n) =
 		let (n) = "\txy_clear_values(a, " +n + ");\n" }) +
 	"\txy_closure_set_a(c, a, " + n + ");\n"
 
-let compiler_c_prelude (n) =
-	"\txy_closure_t* c = xy_closure_create(" + n + ", p);\n" +
-	or_nil(n > 0, "\txy_closure_copy_args(c, r);\n") +
-	"\txy_gc_push_closure(c);\n"
-
-let compiler_z_prelude (false) = ""
-let .. (true) =
-	"\txy_arg_list_t z;\n"
-	
+let compiler_tc_prelude (false) = ""
+let .. () =
+	"tail_call_ret:;\n"
 	
 	
 
@@ -134,22 +139,33 @@ let compiler_c_prologue (n) =
 	"\tc->a.size = 0;\n" +
 	"\txy_gc_pop_closure();\n"
 
-
+let compiler_tc_prologue (false) = ""
+let .. (tc, prol, c) =
+	"\ntail_call:\n" +
+	prol +
+	"\txy_gc_collect();\n"
+	"\tc = xy_closure_create(" + c + ", (" + tc + ")->func.closure);\n"
+	"\txy_closure_copy_args(c, &z);\n"
+	"\txy_gc_push_closure(c);\n"
+	"\tgoto tail_call_ret;\n"
 
 
 let compiler_prelude (compiler) =
+	compiler_z_prelude(compiler::args_case) +
 	compiler_c_prelude(compiler::c) +
-	compiler_a_prelude(compiler::a_max) +
-	compiler_z_prelude(compiler::args_case)
+	compiler_tc_prelude(compiler::tail_call_case) +
+	compiler_a_prelude(compiler::a_max)
 ;
 
 let compiler_prologue (compiler) =
-	with (prol = compiler_c_prologue(compiler::c))
+	with (prol = compiler_c_prologue(compiler::c),
+			success = prol + "\txy_gc_collect_retain(o);\n",
+			fail = prol + "\txy_gc_collect();\n")
 		"success:\n" +
-		prol +
-		"\txy_gc_collect_retain(o);\n"
+		success + 
 		"\treturn true;\n" +
 		or_nil(compiler::fail_case,
-			"fail: // :( \n" + prol +
-			"\txy_gc_collect();\n"
-			"\treturn false;\n")
+			"fail: // :( \n" + 
+			fail +
+			"\treturn false;\n") +
+		compiler_tc_prologue(compiler::tail_call_case, prol, compiler::c)
