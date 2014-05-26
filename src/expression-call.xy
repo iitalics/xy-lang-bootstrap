@@ -23,7 +23,7 @@ let expression_call (func, args) =
 				compiler_fail_code())
 		
 		o -> @{
-			let ("o") =
+			let (o : compiler::opts::tail_calls and o == "o") =
 				[z_code + 
 					"\tif (xy_value_is_function(" + (hd accu) +
 					", " + compiler::func_qual_name + "))\n"

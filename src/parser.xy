@@ -118,7 +118,13 @@ let parse_env (toks, env, last_name) =
 		let ("<eof>") = env
 
 		let ("use") =
-			token_die(hd toks, "'use' not implemented yet")
+			with ([file_tok, toks] = parse_expect("<string>", tl toks))
+			with (fname = file_tok::str, data = fread(fname,
+					@(_) = _,
+					@() = token_die(hd toks, "error opening file '" + fname + "'")))
+			with (new_toks = lexer_create(data, fname) -> lexer_parse_all)
+			with (env = parse_env(new_toks, env))
+				parse_env(toks, env, last_name)
 
 		let ("let") =
 			with ([name, body, toks] = parse_declaration(toks, last_name))

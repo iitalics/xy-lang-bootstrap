@@ -1,5 +1,5 @@
 XY=xy.exe src/main.xy
-XYFLAGS=
+XYFLAGS=-T
 
 CC=gcc
 CFLAGS=-Iclib

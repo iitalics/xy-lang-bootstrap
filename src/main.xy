@@ -6,13 +6,15 @@ use "src/expression.xy"
 use "src/parser.xy"
 
 
-let version_info () = "version 0.4.1 beta (xy bootstrap)"
+let version_info () = "version 0.4.2 beta (xy bootstrap)"
 let compile_info () = "last modified: may 25, 2014"
 
 
 let help_text () =
 	"usage: xy INPUT_FILE [options]\n"
 	"   -o FILE     choose output file (instead of stdout)\n"
+	"   -t          enable tail calls (default)\n"
+	"   -T          disable tail calls\n"
 	"   --version   show version info\n"
 	"   --help      show this help text"
 ;.
@@ -32,7 +34,8 @@ let open_files (files) =
 
 
 let opt_empty () =
-	{ input_files = [], output_file = () }
+	{ input_files = [], output_file = (),
+      tail_calls = true }
 ;
 let opt_parse ([], opts) = opts
 let .. (args, opts) =
@@ -46,12 +49,15 @@ let .. (args, opts) =
 				[tl tl args,
 				opts + { output_file = hd tl args }]
 			
+			let ("-t") = [tl args, opts + { tail_calls = true }]
+			let ("-T") = [tl args, opts + { tail_calls = false }]
+			
 			let (n) =
 				[tl args,
 				opts + { input_files = opts::input_files + [hd args] }] })
 		opt_parse(args, opts)
 
-let build (files) =
+let build (files, opts) =
 	with (files_name = files -> length -> @{
 		let (1) =
 			hd files
@@ -59,7 +65,7 @@ let build (files) =
 			"<multiple files>" })
 	with (toks = lexer_create(files -> open_files, files_name) -> lexer_parse_all)
 	with (env = parse_env(toks, []))
-	with (compiler = compiler_make())
+	with (compiler = compiler_make() + { opts = opts })
 	with ([code, compiler] = env_compile(env, compiler))
 	with (extern_code = compiler -> compiler_extern_code)
 		("// compiler:  " + version_info() + "\n\n"
@@ -83,5 +89,5 @@ let main ([]) = help_text() -> display_ln
 let .. (args) =
 	try(@() =
 			with (opts = opt_parse(args, opt_empty()))
-				build_write_output(opts::input_files -> build, opts),
+				build_write_output(build(opts::input_files, opts), opts),
 		display_ln)

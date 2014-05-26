@@ -28,6 +28,7 @@ let compiler_make () =
 	{ lambda_queue = [],
 	  extern_funcs = [],
 	  closure = (),
+	  opts = (),
 	  l = 0	}
 	-> compiler_reset_function
 ;
