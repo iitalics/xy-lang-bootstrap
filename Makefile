@@ -20,7 +20,7 @@ $(CSOURCE): $(SOURCE)
 	
 # TODO fix this linking stuff
 #  it should be: "-Lclib -lxy" instead of "clib/libxy.a"
-$(PROGRAM): bin $(COBJECT)
+$(PROGRAM): bin $(COBJECT) clib/libxy.a
 	$(LINK) $(LFLAGS) -o $(PROGRAM) $(COBJECT) clib/libxy.a
 
 bin: 

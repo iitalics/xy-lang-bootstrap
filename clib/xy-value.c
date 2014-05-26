@@ -164,6 +164,16 @@ xy_value_is_function (xy_value_t* value, xy_func_ptr_t f)
 
 
 
+static void
+xy_string_free (xy_string_t* str)
+{
+#ifdef XY_GC_MONITOR
+	printf("!! destroying string: \"%s\" %p\n",
+		str->str, str);
+#endif
+	xy_free(str);
+}
+
 xy_string_t*
 xy_string (const char* s)
 {
@@ -176,7 +186,7 @@ xy_string (const char* s)
 	
 	xys->str = (char*)(xys + 1);
 	strcpy(xys->str, s);
-	xy_gc_add(&xys->gc, xys, xy_free);
+	xy_gc_add(&xys->gc, xys, xy_string_free);
 	
 	return xys;
 }
@@ -186,7 +196,18 @@ void
 xy_string_gc_mark (xy_string_t* str)
 {
 	if (str != NULL)
-		xy_gc_mark(&str->gc);
+	{
+#ifdef XY_GC_MONITOR
+		if (
+#endif
+		xy_gc_mark(&str->gc)
+#ifdef XY_GC_MONITOR
+			)
+			printf("marking string: \"%s\" %p\n",
+				str->str, str)
+#endif
+		; // this is a mess
+	}
 }
 
 

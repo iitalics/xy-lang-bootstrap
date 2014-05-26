@@ -5,8 +5,7 @@
 
 
 static xy_gc_t* garbage_heap = NULL;
-static int prev_mark = 0;
-static int next_mark = 0;
+static int prev_mark, next_mark;
 static bool collecting = false;
 static int collect_loop = 0;
 
@@ -17,6 +16,8 @@ static int collect_loop = 0;
 struct closure_node
 {
 	xy_closure_t* closure;
+	xy_arg_list_t accu;
+	
 	struct closure_node* next;
 };
 static struct closure_node* closure_stack = NULL;
@@ -41,7 +42,8 @@ xy_gc_init ()
 {
 	garbage_heap = NULL;
 	
-	prev_mark = next_mark = 0;
+	prev_mark = 0;
+	next_mark = 1;
 	collecting = false;
 	closure_stack = NULL;
 	collect_loop = 0;
@@ -75,7 +77,7 @@ xy_gc_add (xy_gc_t* g, void* ud, void* free_func)
 
 
 void
-xy_gc_push_closure (xy_closure_t* c)
+xy_gc_push_closure (xy_closure_t* c, xy_value_t* accu, int n)
 {
 	if (c == NULL) return; // ??
 	
@@ -84,6 +86,8 @@ xy_gc_push_closure (xy_closure_t* c)
 	if (node != NULL)
 	{
 		node->closure = c;
+		node->accu.values = accu;
+		node->accu.size = n;
 		node->next = closure_stack;
 		closure_stack = node;
 	}
@@ -113,31 +117,42 @@ xy_gc_begin ()
 {
 	if ((++collect_loop) >= COLLECT_FREQ)
 	{
+#ifdef XY_GC_MONITOR
+		printf(" * gc collect begin!\n");
+#endif
+		
 		collect_loop = 0;
 		
 		collecting = true;
 		next_mark = prev_mark + 1; // integer overflows SHOULDNT be a problem
 		
 		struct closure_node* node;
+		int i;
+		
 		for (node = closure_stack; node != NULL; node = node->next)
+		{
 			xy_closure_gc_mark(node->closure);
+			
+			for (i = 0; i < node->accu.size; i++)
+				xy_value_gc_mark(node->accu.values + i);
+		}
 	}
 }
 
 
 bool
-xy_gc_mark (xy_gc_t* g) // returns 'true' if collecting wasn't needed
+xy_gc_mark (xy_gc_t* g) // returns 'false' if collecting wasn't needed
 {
 	if (g == NULL || !collecting)
-		return true;
+		return false;
 	
 	if (g->mark_info == prev_mark)
 	{
 		g->mark_info = next_mark;
-		return false;
+		return true;
 	}
 	else
-		return true;
+		return false;
 }
 
 

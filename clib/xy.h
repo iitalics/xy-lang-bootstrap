@@ -2,7 +2,7 @@
 #define XY_LIB_H_INCLUDED
 
 /**    xy-lang runtime library
- **  version 1.0.1
+ **  version 1.1.0
  **  last modified:  may 18, 2014
  **/
 
@@ -51,7 +51,6 @@ struct xy_gc
 /** c string that exists on the heap **/
 struct xy_string
 {
-
 	// TODO: c strings considered harmful...
 	char* str;
 	
@@ -70,7 +69,7 @@ struct xy_closure
 {
 	int size;
 	xy_value_t* values;
-	xy_arg_list_t a;
+//	xy_arg_list_t a;
 	xy_closure_t* parent;
 	
 	xy_gc_t gc;
@@ -185,7 +184,6 @@ XYLIB xy_string_t* xy_string (const char*);
 
 XYLIBGC void xy_closure_gc_mark (xy_closure_t*);
 XYLIB xy_closure_t* xy_closure_create (int, xy_closure_t*);
-XYLIB void xy_closure_set_a (xy_closure_t*, xy_value_t*, int);
 XYLIB void xy_closure_get (xy_value_t*, xy_closure_t*, int i, int d);
 XYLIB void xy_closure_copy_args (xy_closure_t*, xy_arg_list_t*);
 XYLIB void xy_closure_free (xy_closure_t*);
@@ -230,7 +228,7 @@ XYLIBGC void xy_gc_init ();
 XYLIBGC void xy_gc_cleanse (); // frees EVERYTHING
 
 XYLIBGC void xy_gc_add (xy_gc_t*, void* ud, void* free_func);
-XYLIBGC void xy_gc_push_closure (xy_closure_t*);
+XYLIBGC void xy_gc_push_closure (xy_closure_t*, xy_value_t* accu, int);
 XYLIBGC void xy_gc_pop_closure ();
 
 XYLIBGC void xy_gc_begin (); // begin collection process

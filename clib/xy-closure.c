@@ -17,20 +17,11 @@ xy_closure_create (int size, xy_closure_t* parent)
 	c->size = size;
 	c->values = (xy_value_t*)(c + 1);
 	c->parent = parent;
-	c->a.size = 0;
 	
 	xy_gc_add(&c->gc, c, /*xy_closure_free*/xy_free);
 	return c;
 }
 
-void
-xy_closure_set_a (xy_closure_t* c, xy_value_t* a, int n)
-{
-	if (c == NULL) return;
-	
-	if ((c->a.size = n) > 0)
-		c->a.values = a;
-}
 
 void
 xy_closure_get (xy_value_t* v, xy_closure_t* c, int i, int d)
@@ -85,9 +76,6 @@ xy_closure_gc_mark (xy_closure_t* c)
 		int i;
 		for (i = 0; i < c->size; i++)
 			xy_value_gc_mark(c->values + i);
-		
-		for (i = 0; i < c->a.size; i++)
-			xy_value_gc_mark(c->a.values + i);
 		
 		xy_closure_gc_mark(c->parent);
 	}

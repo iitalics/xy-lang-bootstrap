@@ -6,8 +6,8 @@ use "src/expression.xy"
 use "src/parser.xy"
 
 
-let version_info () = "version 0.4.0 beta (xy bootstrap)"
-let compile_info () = "last modified: may 18, 2014"
+let version_info () = "version 0.4.1 beta (xy bootstrap)"
+let compile_info () = "last modified: may 25, 2014"
 
 
 let help_text () =
@@ -61,8 +61,10 @@ let build (files) =
 	with (env = parse_env(toks, []))
 	with (compiler = compiler_make())
 	with ([code, compiler] = env_compile(env, compiler))
+	with (extern_code = compiler -> compiler_extern_code)
 		("// compiler:  " + version_info() + "\n\n"
-		 "#include <xy.h>\n\n" + code)
+		 "#include <xy.h>\n\n" + 
+		 extern_code + "\n\n" + code)
 ;
 
 

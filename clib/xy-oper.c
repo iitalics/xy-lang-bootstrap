@@ -61,6 +61,9 @@ compare (xy_value_t* a, xy_value_t* b)
 	
 	switch (a->type)
 	{
+	case xy_value_type_void:
+		return compare_equal;
+	
 	case xy_value_type_number:
 		if (a->num == b->num)
 			return compare_equal;

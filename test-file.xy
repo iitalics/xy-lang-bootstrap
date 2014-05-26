@@ -1,5 +1,17 @@
-let sum (0) = 0
-let .. (n) = n + sum(n - 1)
+let cons (x, y) =
+	@{ let (0) = x
+	   let (1) = y }
+let car (f) =
+	f(0)
+let cdr (f) =
+	f(1)
 
+let foldl (f, z, ()) = z
+let foldl (f, z, a) =
+	foldl(f, f(z, a -> car), a -> cdr)
+
+let sum (a) =
+	foldl(@(x, y) = x + y, "", a)
+	
 let main () =
-	sum(40)
+	sum(cons("hello", cons(" ", cons("world"))))

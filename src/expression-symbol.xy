@@ -8,9 +8,10 @@ let expression_symbol (tok) =
 		with ([i, d] = closure_find(compiler::closure, tok::sym))
 			i -> @{
 				let (-1) =
-					["\txy_value_set_function(" + o +
-						", " + function_name(tok::sym) + ", NULL);\n",
-					compiler]
+					with ([name, compiler] = compiler_extern(compiler, tok::sym))
+						["\txy_value_set_function(" + o +
+							", " + name + ", NULL);\n",
+						compiler]
 				let (i) =
 					[closure_code(o, i, d), compiler] }
 ;

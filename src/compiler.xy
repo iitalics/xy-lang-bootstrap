@@ -26,6 +26,7 @@ let function_args_code () =
 
 let compiler_make () =
 	{ lambda_queue = [],
+	  extern_funcs = [],
 	  closure = (),
 	  l = 0	}
 	-> compiler_reset_function
@@ -99,6 +100,13 @@ let compiler_a_pop (compiler, n) =
 
 
 
+let compiler_extern (compiler, str) =
+	with (compiler = indexof(compiler::extern_funcs, str) -> @{
+			let (-1) =
+				compiler + 
+					{ extern_funcs = compiler::extern_funcs + [str] }
+			let () = compiler })
+		[str -> function_name, compiler]
 
 let compiler_push_lambda (compiler, func) =
 	with (l = compiler::l + 1,
@@ -112,49 +120,68 @@ let compiler_push_lambda (compiler, func) =
 ;   PRELUDE / PROLOGUE
 
 
+	
+let compiler_a_clear_code (0) = ""
+let .. (1) =
+	"\txy_value_set_void(a);\n"
+let .. (n) =
+	"\txy_clear_values(a, " + n + ");\n"
+
+let compiler_a_prelude (0) = ""
+let .. (n, tc) =
+	"\txy_value_t a[" + n + "];\n" +
+	or_nil(tc == false, compiler_a_clear_code(n))
+;	"\txy_closure_set_a(c, a, " + n + ");\n"
+
+
 let compiler_z_prelude (false) = ""
 let .. (true) =
 	"\txy_arg_list_t z;\n"
 	
-let compiler_c_prelude (n) =
+
+let compiler_c_push (a) =
+	"\txy_gc_push_closure(c, " +
+	(a -> @{
+		let (0) = "NULL, 0);\n"
+		let (a) = "a, " + a + ");\n" })
+		
+let compiler_c_prelude (n, a) =
 	"\txy_closure_t* c = xy_closure_create(" + n + ", p);\n" +
 	or_nil(n > 0, "\txy_closure_copy_args(c, r);\n") +
-	"\txy_gc_push_closure(c);\n"
+	compiler_c_push(a)
 
-let compiler_a_prelude (0) = ""
-let .. (n) =
-	"\txy_value_t a[" + n + "];\n" +
-	(n -> @{
-		let (1) = "\txy_value_set_void(a);\n"
-		let (n) = "\txy_clear_values(a, " +n + ");\n" }) +
-	"\txy_closure_set_a(c, a, " + n + ");\n"
 
 let compiler_tc_prelude (false) = ""
-let .. () =
-	"tail_call_ret:;\n"
-	
+let .. (_, n) =
+	"tail_call_ret:\n" +
+	compiler_a_clear_code(n)
 	
 
+	
+	
+	
+; #----- prologue -------#
+
 let compiler_c_prologue (n) =
-	"\tc->a.size = 0;\n" +
 	"\txy_gc_pop_closure();\n"
 
 let compiler_tc_prologue (false) = ""
-let .. (tc, prol, c) =
+let .. (tc, prol, c, a) =
 	"\ntail_call:\n" +
 	prol +
-	"\txy_gc_collect();\n"
 	"\tc = xy_closure_create(" + c + ", (" + tc + ")->func.closure);\n"
-	"\txy_closure_copy_args(c, &z);\n"
-	"\txy_gc_push_closure(c);\n"
+	"\txy_closure_copy_args(c, &z);\n" +
+	compiler_c_push(a) +
+	"\txy_gc_collect();\n"
 	"\tgoto tail_call_ret;\n"
 
 
 let compiler_prelude (compiler) =
-	compiler_z_prelude(compiler::args_case) +
-	compiler_c_prelude(compiler::c) +
-	compiler_tc_prelude(compiler::tail_call_case) +
-	compiler_a_prelude(compiler::a_max)
+	with (a = compiler::a_max)
+		compiler_a_prelude(a, compiler::tail_call_case) +
+		compiler_z_prelude(compiler::args_case) +
+		compiler_c_prelude(compiler::c, a) +
+		compiler_tc_prelude(compiler::tail_call_case, a)
 ;
 
 let compiler_prologue (compiler) =
@@ -168,4 +195,11 @@ let compiler_prologue (compiler) =
 			"fail: // :( \n" + 
 			fail +
 			"\treturn false;\n") +
-		compiler_tc_prologue(compiler::tail_call_case, prol, compiler::c)
+		compiler_tc_prologue(compiler::tail_call_case, prol, compiler::c, compiler::a_max)
+
+let compiler_extern_code (compiler) =
+	foldl(@(all, f) =
+			all + "extern bool " + 
+				function_name(f) +
+				function_args_code() + ";\n",
+		"", compiler::extern_funcs)
