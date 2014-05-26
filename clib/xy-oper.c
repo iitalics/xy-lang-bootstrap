@@ -25,10 +25,14 @@ enum compare
 {
 	compare_none = 0,
 	compare_equal = 1,
-	compare_less = 2,
-	compare_greater = 0
+	compare_less = 0,
+	compare_greater = 2
 };
 
+
+
+static enum compare
+compare (xy_value_t* a, xy_value_t* b);
 
 
 static enum compare
@@ -50,6 +54,34 @@ compare_strings (const char* a, const char* b)
 		{
 			return compare_greater;
 		}
+}
+
+static enum compare
+compare_lists (xy_list_t* a, xy_list_t* b)
+{
+	int i, len;
+	
+	if (a == NULL && b == NULL)
+		return compare_equal;
+	
+	
+	len = xy_list_length(a);
+	
+	if (xy_list_length(b) != len)
+		return compare_none;
+	
+	xy_value_t va, vb;
+	
+	for (i = 0; i < len; i++)
+	{
+		xy_list_get(&va, a, i);
+		xy_list_get(&vb, b, i);
+		
+		if (compare(&va, &vb) != compare_equal)
+			return compare_none;
+	}
+	
+	return compare_equal;
 }
 
 
@@ -85,6 +117,9 @@ compare (xy_value_t* a, xy_value_t* b)
 	case xy_value_type_string:
 		return compare_strings(xy_value_get_string(a),
 						xy_value_get_string(b));
+		
+	case xy_value_type_list:
+		return compare_lists(a->list, b->list);
 		
 	default:
 		return compare_none;
@@ -160,6 +195,13 @@ bool xy_oper_pls (xy_value_t* o, xy_value_t* a, xy_value_t* b, xy_err_string_t* 
 			xy_free(buf);
 		}
 		
+		return true;
+	}
+	
+	if (a->type == xy_value_type_list &&
+			b->type == xy_value_type_list)
+	{
+		xy_value_set_list_concat(o, a->list, b->list);
 		return true;
 	}
 	
@@ -285,9 +327,83 @@ bool xy_oper_seq (xy_value_t* o, xy_value_t* a, xy_value_t* b, xy_err_string_t* 
 {
 	if (a == NULL || b == NULL || o == NULL) return mem_error();
 	
+	if (xy_value_is_type(b, xy_value_type_int) &&
+			xy_value_is_type(a, xy_value_type_iterable))
+	{
+		int index = (int)(b->num);
+		if (index < 0)
+		{
+			// :/ kinda dumb
+			xy_value_set_value(o, a);
+			return true;
+		}
+		
+		if (a->type == xy_value_type_string)
+		{
+			if (index >= strlen(xy_value_get_string(a)))
+				xy_value_set_string_c(o, "");
+			else
+			{
+				xy_value_set_value(o, a);
+				o->str.subindex += index;
+			}
+		}
+		else // if (type == <list>)
+			xy_value_set_list_sublist(o, a->list, index);
+		
+		return true;
+	}
+	
 	{
 		char msg[56 + NAME_LENGTH + NAME_LENGTH];
 		sprintf(msg, "cannot apply operator '..' to values of type '%s' and '%s'",
+			value_type_name(a->type), value_type_name(b->type));
+		return xy_die(e, msg);
+	}
+}
+
+static char constant_chars[256 * 2];
+static const char*
+constant_char (char c)
+{
+	constant_chars[((int)c * 2)] = c;
+	constant_chars[((int)c * 2) + 1] = '\0';
+	return constant_chars + (c * 2);
+}
+
+
+bool xy_oper_dot (xy_value_t* o, xy_value_t* a, xy_value_t* b, xy_err_string_t* e)
+{
+	if (a == NULL || b == NULL || o == NULL) return mem_error();
+	
+	if (xy_value_is_type(b, xy_value_type_int) &&
+			xy_value_is_type(a, xy_value_type_iterable))
+	{
+		int index = (int)(b->num);
+		
+		if (a->type == xy_value_type_string)
+		{
+			const char* str = xy_value_get_string(a);
+			if (index < 0 || index >= strlen(str))
+				xy_value_set_string_c(o, "");
+			else
+				xy_value_set_string_c(o, constant_char(str[index]));
+		}
+		else // if (type == <list>)
+		{
+			if (index < 0)
+				xy_value_set_void(o);
+			else
+				xy_list_get(o, a->list, index);
+		}
+		
+		return true;
+	}
+	
+	
+	{
+		char msg[56 + NAME_LENGTH + NAME_LENGTH];
+		sprintf(msg, "cannot apply operator '.' to values of type '%s' and '%s'",
 			value_type_name(a->type), value_type_name(b->type));
 		return xy_die(e, msg);
 	}
@@ -398,7 +514,6 @@ xy_u_oper_neg (xy_value_t* o, xy_value_t* a, xy_err_string_t* e)
 	return xy_die(e, msg);
 }
 
-static char constant_chars[256 * 2];
 
 bool
 xy_u_oper_hd (xy_value_t* o, xy_value_t* a, xy_err_string_t* e)
@@ -412,12 +527,13 @@ xy_u_oper_hd (xy_value_t* o, xy_value_t* a, xy_err_string_t* e)
 		if (str[0] == '\0')
 			xy_value_set_string_c(o, "");
 		else
-		{
-			int i = str[0];
-			constant_chars[(i * 2)] = str[0];
-			constant_chars[(i * 2) + 1] = '\0';
-			xy_value_set_string_c(o, constant_chars + (i * 2));
-		}
+			xy_value_set_string_c(o, constant_char(str[0]));
+		
+		return true;
+	}
+	else if (a->type == xy_value_type_list)
+	{
+		xy_list_get(o, a->list, 0);
 		return true;
 	}
 	
@@ -440,6 +556,11 @@ xy_u_oper_tl (xy_value_t* o, xy_value_t* a, xy_err_string_t* e)
 		if (str[0] != '\0')
 			o->str.subindex++;
 		
+		return true;
+	}
+	else if (a->type == xy_value_type_list)
+	{
+		xy_value_set_list_sublist(o, a->list, 1);
 		return true;
 	}
 	

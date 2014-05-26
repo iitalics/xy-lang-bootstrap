@@ -48,37 +48,7 @@ xy_value_set_value (xy_value_t* v, xy_value_t* in)
 	
 	if (in == NULL)
 		xy_value_set_void(v);
-	else/*
-		switch (v->type = in->type)
-		{
-		case xy_value_type_number:
-			xy_value_set_number(v, in->num);
-			break;
-			
-		case xy_value_type_bool:
-			xy_value_set_bool(v, in->cond);
-			break;
-			
-		case xy_value_type_function:
-			xy_value_set_function(v,
-				in->func.ptr, in->func.closure);
-			break;
-			
-		case xy_value_type_string:
-		{
-			if ((v->str.constant = in->str.constant))
-				v->str.c_str = in->str.c_str;
-			else
-				v->str.xy_str = in->str.xy_str;
-			
-			v->str.subindex = in->str.subindex;
-			break;
-		}
-			
-		case xy_value_type_void:
-		default:
-			xy_value_set_void(v);
-		}*/
+	else
 		*v = *in;
 }
 
@@ -102,57 +72,15 @@ xy_value_condition (xy_value_t* v)
 	case xy_value_type_string:
 		return xy_value_get_string(v)[0] != '\0';
 		
+	case xy_value_type_list:
+		return v->list != NULL;
+		
 	default:
 		return xy_false;
 	}
 }
 
 
-
-
-void
-xy_value_set_string (xy_value_t* v, const char* s)
-{
-	if (v == NULL) return;
-	
-	if (s[0] == '\0')
-	{
-		xy_value_set_string_c(v, "");
-		return;
-	}
-	
-	v->type = xy_value_type_string;
-	v->str.constant = false;
-	v->str.subindex = 0;
-	v->str.xy_str = xy_string(s);
-}
-
-
-void
-xy_value_set_string_c (xy_value_t* v, const char* s)
-{
-	if (v == NULL) return;
-	
-	v->type = xy_value_type_string;
-	v->str.constant = true;
-	v->str.subindex = 0;
-	v->str.c_str = s;
-}
-
-const char*
-xy_value_get_string (xy_value_t* v)
-{
-	if (v == NULL || v->type != xy_value_type_string)
-		return NULL;
-		
-	const char* s;
-	if (v->str.constant)
-		s = v->str.c_str;
-	else
-		s = v->str.xy_str->str;
-	
-	return s + v->str.subindex;
-}
 
 
 bool
@@ -163,54 +91,6 @@ xy_value_is_function (xy_value_t* value, xy_func_ptr_t f)
 }
 
 
-
-static void
-xy_string_free (xy_string_t* str)
-{
-#ifdef XY_GC_MONITOR
-	printf("!! destroying string: \"%s\" %p\n",
-		str->str, str);
-#endif
-	xy_free(str);
-}
-
-xy_string_t*
-xy_string (const char* s)
-{
-	if (s == NULL)
-		return xy_string("");
-	
-	xy_string_t* xys =
-		xy_malloc(sizeof(xy_string_t) +
-			strlen(s) + 1);
-	
-	xys->str = (char*)(xys + 1);
-	strcpy(xys->str, s);
-	xy_gc_add(&xys->gc, xys, xy_string_free);
-	
-	return xys;
-}
-
-
-void
-xy_string_gc_mark (xy_string_t* str)
-{
-	if (str != NULL)
-	{
-#ifdef XY_GC_MONITOR
-		if (
-#endif
-		xy_gc_mark(&str->gc)
-#ifdef XY_GC_MONITOR
-			)
-			printf("marking string: \"%s\" %p\n",
-				str->str, str)
-#endif
-		; // this is a mess
-	}
-}
-
-
 void
 xy_value_gc_mark (xy_value_t* v)
 {
@@ -218,10 +98,13 @@ xy_value_gc_mark (xy_value_t* v)
 	
 	if (v->type == xy_value_type_function)
 		xy_closure_gc_mark(v->func.closure);
-	
-	if (v->type == xy_value_type_string &&
-			!v->str.constant)
-		xy_string_gc_mark(v->str.xy_str);
+	else if (v->type == xy_value_type_string)
+	{
+		if (!v->str.constant)
+			xy_string_gc_mark(v->str.xy_str);
+	}
+	else if (v->type == xy_value_type_list)
+		xy_list_gc_mark(v->list);
 }
 
 
@@ -263,6 +146,43 @@ number_to_string (double num)
 	return xy_string(buf)->str;
 }
 
+static const char*
+list_to_string (xy_list_t* list)
+{
+	int i, len = xy_list_length(list);
+	xy_value_t v;
+	if (len == 0)
+		return "[ ]";
+	
+	// "[ X, X, X ]"
+	//  ^^       ^^"
+	//     ^^
+	
+	// string length = 4 + (n - 1) * 2 = 2 + 2 * n
+	
+	const char* items[len];
+	int size = 0;
+	for (i = 0; i < len; i++)
+	{
+		xy_list_get(&v, list, i);
+		items[i] = xy_value_to_string(&v);
+		size += strlen(items[i]);
+	}
+	
+	char* start = xy_string_alloc(2 + 2 * len + size)->str;
+	char* buf = start;
+	
+	buf += sprintf(buf, "[ ");
+	
+	for (i = 0; i < len; i++)
+		buf += sprintf(buf, "%s%s",
+					(i > 0) ? ", " : "",
+					items[i]);
+	
+	sprintf(buf, " ]");
+	return start;
+}
+
 
 const char*
 xy_value_to_string (xy_value_t* v)
@@ -286,6 +206,9 @@ xy_value_to_string (xy_value_t* v)
 	case xy_value_type_string:
 		return xy_value_get_string(v);
 		
+	case xy_value_type_list:
+		return list_to_string(v->list);
+	
 	default:
 		return "<unknown>";
 	}
@@ -309,8 +232,8 @@ xy_value_is_type (xy_value_t* v, enum xy_value_type t)
 			v->type == xy_value_type_string;
 	
 	case xy_value_type_iterable:
-		return v->type == xy_value_type_string;
-			// || v->type == xy_value_type_list;
+		return v->type == xy_value_type_string ||
+			v->type == xy_value_type_list;
 			
 	default:
 		return v->type == t;

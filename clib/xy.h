@@ -23,6 +23,7 @@ typedef double xy_number_t;
 typedef bool xy_bool_t;
 typedef char* xy_err_string_t;
 typedef struct xy_string xy_string_t;
+typedef struct xy_list xy_list_t;
 typedef struct xy_value xy_value_t;
 typedef struct xy_closure xy_closure_t;
 typedef struct xy_arg_list xy_arg_list_t;
@@ -76,6 +77,42 @@ struct xy_closure
 };
 
 
+
+
+/** for methods of lazy list storage **/
+enum xy_list_type
+{
+	xy_list_type_basic = 0,
+	xy_list_type_sublist = 1,
+	xy_list_type_concat = 2
+};
+
+/** for list values **/
+struct xy_list
+{
+	enum xy_list_type type;
+	
+	union
+	{
+		xy_arg_list_t basic;
+		
+		struct
+		{
+			int i;
+			xy_list_t* a;
+		} sublist;
+		
+		struct
+		{
+			xy_list_t* a;
+			xy_list_t* b;
+		} concat;
+	};
+	
+	xy_gc_t gc;
+};
+
+
 enum xy_value_type
 {
 	xy_value_type_void = 		1,
@@ -83,6 +120,7 @@ enum xy_value_type
 	xy_value_type_bool = 		4,
 	xy_value_type_function =	8,
 	xy_value_type_string = 		16,
+	xy_value_type_list =		32,
 	
 	xy_value_type_int = -1,
 	xy_value_type_orderable = -2, // supports '<', '>', '<=', '>='
@@ -121,6 +159,9 @@ struct xy_value
 				xy_string_t* xy_str;
 			};
 		} str;
+		
+		// for type = <list>
+		xy_list_t* list;
 	};
 };
 
@@ -150,6 +191,11 @@ XYLIB void xy_value_set_function (xy_value_t* value, xy_func_ptr_t, xy_closure_t
 XYLIB void xy_value_set_string (xy_value_t* value, const char*);
 XYLIB void xy_value_set_string_c (xy_value_t* value, const char*);
 
+XYLIB void xy_value_set_list_empty (xy_value_t* value);
+XYLIB void xy_value_set_list_basic (xy_value_t* value, xy_value_t* a, int);
+XYLIB void xy_value_set_list_concat (xy_value_t* value, xy_list_t*, xy_list_t*);
+XYLIB void xy_value_set_list_sublist (xy_value_t* value, xy_list_t*, int);
+
 // copy value to 'out'
 XYLIB void xy_value_set_value (xy_value_t* out, xy_value_t* in);
 
@@ -164,13 +210,11 @@ XYLIB const char* xy_value_get_string (xy_value_t*);
 XYLIB bool xy_value_is_function (xy_value_t* value, xy_func_ptr_t);
 
 
-/*
-	           void = false
+/*	           void = false
 	       number 0 = false
 	   bool 'false' = false
 	      string "" = false
-	everything else = true
-*/
+	everything else = true */
 XYLIB xy_bool_t xy_value_condition (xy_value_t*);
 
 
@@ -180,6 +224,16 @@ XYLIB const char* xy_value_to_string (xy_value_t*);
 
 XYLIBGC void xy_string_gc_mark (xy_string_t*);
 XYLIB xy_string_t* xy_string (const char*);
+XYLIB xy_string_t* xy_string_alloc (int);
+
+
+
+XYLIBGC void xy_list_gc_mark (xy_list_t*);
+XYLIB xy_list_t* xy_list_basic (xy_value_t*, int);
+XYLIB xy_list_t* xy_list_concat (xy_list_t*, xy_list_t*);
+XYLIB xy_list_t* xy_list_sublist (xy_list_t*, int);
+XYLIB int xy_list_length (xy_list_t*);
+XYLIB void xy_list_get (xy_value_t* out, xy_list_t*, int);
 
 
 XYLIBGC void xy_closure_gc_mark (xy_closure_t*);
@@ -201,6 +255,7 @@ XYLIB bool xy_oper_div (xy_value_t*, xy_value_t* a, xy_value_t* b, xy_err_string
 XYLIB bool xy_oper_exp (xy_value_t*, xy_value_t* a, xy_value_t* b, xy_err_string_t*); // a ^ b
 XYLIB bool xy_oper_gr (xy_value_t*, xy_value_t* a, xy_value_t* b, xy_err_string_t*);  // a > b
 XYLIB bool xy_oper_ls (xy_value_t*, xy_value_t* a, xy_value_t* b, xy_err_string_t*);  // a < b
+XYLIB bool xy_oper_dot (xy_value_t*, xy_value_t* a, xy_value_t* b, xy_err_string_t*);  // a . b
 XYLIB bool xy_oper_seq (xy_value_t*, xy_value_t* a, xy_value_t* b, xy_err_string_t*); // a .. b
 XYLIB bool xy_oper_eql (xy_value_t*, xy_value_t* a, xy_value_t* b, xy_err_string_t*); // a == b
 XYLIB bool xy_oper_neq (xy_value_t*, xy_value_t* a, xy_value_t* b, xy_err_string_t*); // a != b
