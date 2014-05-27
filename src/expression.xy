@@ -1,4 +1,6 @@
 
+let expression_const (q) = q -> expression_const_
+
 use "src/expression-const.xy"
 use "src/optimizer.xy"
 
@@ -11,3 +13,15 @@ use "src/expression-binary.xy"
 use "src/expression-symbol.xy"
 use "src/expression-lambda.xy"
 use "src/expression-list.xy"
+
+
+
+let expression_const_
+	   (q -> number?) = { num = q } -> expression_number
+let .. (q -> string?) = { str = q } -> expression_string
+let .. (true) = { tok = "true" } -> expression_bool
+let .. (false) = { tok = "false" } -> expression_bool
+let .. (()) = expression_void()
+let .. (q -> list?) =
+	(q $ t = 
+		t -> expression_const) -> expression_list

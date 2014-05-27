@@ -92,11 +92,13 @@ let .. (a, op, b) =
 let expression_unary (op, a) =
 	{ constant = a::constant,
 	  eval = @() = 
-		[unary_op_func(op)(hd a::eval())],
+		with ([a_e] = a::eval(),
+				o = (unary_op_func(op))(a_e))
+			[o],
 	  compile = 
 		@(o, compiler) =
 			with ([z, compiler] = compiler_a_push(compiler, 1))
-			with ([code, compiler] = a(hd z, compiler))
+			with ([code, compiler] = (a -> optimize)::compile(hd z, compiler))
 			with (compiler = compiler_a_pop(compiler, 1))
 				[code +
 					"\tif (!" + unary_op_string(op) +

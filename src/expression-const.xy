@@ -54,12 +54,3 @@ let expression_string (tok) =
 ;
 
 
-
-let expression_const
-	   (q -> number?) = { num = q } -> expression_number
-let .. (q -> string?) = { str = q } -> expression_string
-let .. (true) = { tok = "true" } -> expression_bool
-let .. (false) = { tok = "false" } -> expression_bool
-let .. (()) = expression_void()
-let .. (q -> list?) =
-	(q $ t = t -> expression_const) -> expression_list

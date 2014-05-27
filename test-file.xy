@@ -1,10 +1,2 @@
-let foldl (f, z, []) = z
-let .. (f, z, a) =
-	foldl(f, f(z, hd a), tl a)
-
-
-let map (f, a) =
-	foldl(@(z, t) = z + [t -> f], [], a)
-
-let main () =
-	map(`* 2, [1, 2, 3, 4, 5])
+let main () = 
+	tl [3, 2, 3, 4, 5]

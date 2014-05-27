@@ -23,13 +23,8 @@ let expression_list (items) =
 				"\txy_value_set_list_basic(" + o +
 				", " + hd a + ", " + length(items) + ");\n", compiler])
 	with (const = foldl(&and, true, items $ t = t::constant))
-		const -> @{
-			let (false) = f -> expression_no_const
-			
-			let () =
-				{ constant = true,
-				  eval = @() =
-					with (items = items $ t = hd (t::eval()))
-						[ items ],
-				  compile = f }
-		}
+		{ constant = const, primitive = true,
+		  eval = @() =
+			with (a = items $ t = hd (t::eval()))
+				[a],
+		  compile = f }
