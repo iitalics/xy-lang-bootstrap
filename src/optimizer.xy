@@ -1,0 +1,14 @@
+
+let optimize (exp) =
+	(exp::constant and (exp::primitive -> void?)) -> @{
+		let (true) =
+			optimize_get_optimized(exp) -> optimize
+		let () = exp }
+		
+			
+let optimize_get_optimized (exp) =
+	try(@() = 
+		exp::eval() -> @{
+			let ([]) = exp + { constant = false }
+			let (es) = expression_const(hd es) },
+		@() = exp)
