@@ -52,6 +52,19 @@ xy_value_set_list_sublist (xy_value_t* value, xy_list_t* a, int n)
 }
 
 
+void
+xy_value_set_list_range (xy_value_t* value, int s, int e)
+{
+	if (value == NULL) return;
+	
+	value->type = xy_value_type_list;
+	value->list =
+		(e < s)
+			? NULL
+			: xy_list_range(s, e);
+}
+
+
 static inline xy_list_t*
 xy_list_create_buf (enum xy_list_type t, int pad)
 {
@@ -103,6 +116,16 @@ xy_list_sublist (xy_list_t* a, int i)
 }
 
 
+xy_list_t*
+xy_list_range (int s, int e)
+{
+	xy_list_t* list = xy_list_create(xy_list_type_range);
+	list->range.start = s;
+	list->range.end = e;
+	return list;
+}
+
+
 int
 xy_list_length (xy_list_t* list)
 {
@@ -121,6 +144,9 @@ xy_list_length (xy_list_t* list)
 		return xy_list_length(list->concat.a) +
 			xy_list_length(list->concat.b);
 		
+	case xy_list_type_range:
+		return list->range.end - list->range.start + 1;
+	
 	default:	
 		return 0;
 	}
@@ -152,6 +178,11 @@ xy_list_get (xy_value_t* out, xy_list_t* list, int i)
 					xy_list_get(out, list->concat.a, i);
 				break;
 			}
+			
+		case xy_list_type_range:
+			xy_value_set_number(out, list->range.start + i);
+			break;
+			
 		default: break;
 		}
 }

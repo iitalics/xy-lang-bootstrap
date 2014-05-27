@@ -2,7 +2,7 @@
 #define XY_LIB_H_INCLUDED
 
 /**    xy-lang runtime library
- **  version 1.1.1
+ **  version 1.1.2
  **  last modified:  may 26, 2014
  **/
 
@@ -84,7 +84,8 @@ enum xy_list_type
 {
 	xy_list_type_basic = 0,
 	xy_list_type_sublist = 1,
-	xy_list_type_concat = 2
+	xy_list_type_concat = 2,
+	xy_list_type_range = 3
 };
 
 /** for list values **/
@@ -107,6 +108,12 @@ struct xy_list
 			xy_list_t* a;
 			xy_list_t* b;
 		} concat;
+		
+		struct
+		{
+			int start;
+			int end;
+		} range;
 	};
 	
 	xy_gc_t gc;
@@ -195,6 +202,7 @@ XYLIB void xy_value_set_list_empty (xy_value_t* value);
 XYLIB void xy_value_set_list_basic (xy_value_t* value, xy_value_t* a, int);
 XYLIB void xy_value_set_list_concat (xy_value_t* value, xy_list_t*, xy_list_t*);
 XYLIB void xy_value_set_list_sublist (xy_value_t* value, xy_list_t*, int);
+XYLIB void xy_value_set_list_range (xy_value_t* value, int, int);
 
 // copy value to 'out'
 XYLIB void xy_value_set_value (xy_value_t* out, xy_value_t* in);
@@ -232,6 +240,7 @@ XYLIBGC void xy_list_gc_mark (xy_list_t*);
 XYLIB xy_list_t* xy_list_basic (xy_value_t*, int);
 XYLIB xy_list_t* xy_list_concat (xy_list_t*, xy_list_t*);
 XYLIB xy_list_t* xy_list_sublist (xy_list_t*, int);
+XYLIB xy_list_t* xy_list_range (int, int);
 XYLIB int xy_list_length (xy_list_t*);
 XYLIB void xy_list_get (xy_value_t* out, xy_list_t*, int);
 
