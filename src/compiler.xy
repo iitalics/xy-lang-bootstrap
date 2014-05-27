@@ -87,6 +87,9 @@ let .. (c, name, v : (hd v)::name == name) =
 let .. (c, name, v) =
 	closure_find(c, name, tl v)
 
+	
+	
+	
 let compiler_a_push (compiler, n) =
 	with (a = compiler::a + n)
 		[1 .. n $ i = "a + " + (a + i - n - 1),

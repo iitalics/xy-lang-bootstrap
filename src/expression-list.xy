@@ -1,0 +1,22 @@
+
+
+
+
+let expression_list ([]) =
+	@(o, compiler) =
+		["\txy_value_set_list_empty(" + o + ");\n", compiler]
+	
+let expression_list (items) =
+	@(o, compiler) =
+		with ([a, compiler] = compiler_a_push(compiler, length(items)))
+		with ([_, items_code, compiler] = 
+				foldl(@(_, e) =
+					with ([i, all, compiler] = _)
+					with ([code, compiler] = e(a . i, compiler))
+						[i + 1, all + code, compiler],
+				[0, "", compiler],
+				items))
+		with (compiler = compiler_a_pop(compiler, length(items)))
+			[items_code +
+				"\txy_value_set_list_basic(" + o +
+				", " + hd a + ", " + length(items) + ");\n", compiler]

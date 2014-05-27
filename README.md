@@ -13,8 +13,6 @@ Compiler Features To Be Implemented
 * lazy-evaluated `and` and `or` expressions
 * `&OPERATOR` lambdas
 * `with` expressions
-* lists
 * list comprehension (`$` syntax)
 * maps
-* `use` file inclusion
 * the entire standard library

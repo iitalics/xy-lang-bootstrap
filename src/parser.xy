@@ -30,6 +30,7 @@ let .. (toks, syard) =
 
 use "src/parser-func.xy"
 use "src/parser-lambda.xy"
+use "src/parser-list.xy"
 
 let parse_single (toks) =
 	with ([e, toks] = (hd toks)::tok -> @{
@@ -50,6 +51,9 @@ let parse_single (toks) =
 				
 				let ("`") =
 					parse_lambda_mini(tl toks)
+				
+				let ("[") =
+					parse_list(tl toks)
 
 				let (t : t == "true" or t == "false") =
 					[expression_bool(hd toks), tl toks]

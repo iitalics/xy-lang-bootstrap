@@ -1,17 +1,10 @@
-let cons (x, y) =
-	@{ let (0) = x
-	   let (1) = y }
-let car (f) =
-	f(0)
-let cdr (f) =
-	f(1)
+let foldl (f, z, []) = z
+let .. (f, z, a) =
+	foldl(f, f(z, hd a), tl a)
 
-let foldl (f, z, ()) = z
-let foldl (f, z, a) =
-	foldl(f, f(z, a -> car), a -> cdr)
 
-let sum (a) =
-	foldl(@(x, y) = x + y, "", a)
-	
+let map (f, a) =
+	foldl(@(z, t) = z + [t -> f], [], a)
+
 let main () =
-	sum(cons("hello", cons(" ", cons("world"))))
+	map(`* 2, [1, 2, 3, 4, 5])

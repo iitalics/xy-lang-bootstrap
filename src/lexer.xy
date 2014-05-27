@@ -54,6 +54,12 @@ let lexer_parse_symbol (str : hd str -> is_symbol?) =
 			[s, str] = lexer_parse_symbol(tl str))
 		[ c + s, str ]
 let .. (str) = [ "", str ]
+
+
+
+
+
+
 ;
 
 let lexer_parse_number (str, ()) =
@@ -64,23 +70,57 @@ let .. (str : hd str -> is_digit?, n) =
 let .. (str, n) = [n, str]
 
 
+
+
+
+
+
+
+
+
 let lexer_parse_string (lex) =
 	lexer_parse_string_iter(lex + { str = tl lex::str },
 		hd lex::str, "")
 
-let lexer_parse_string_iter (lex, q, buf) = 
-	with ([c, func] = hd lex::str -> @{
+let lexer_escape (lex) =
+	with ([c, str..] = lex::str)
+		c -> @{
+			let ("t") = ["\t", lex + { str = str }]
+			let ("n") = ["\n", lex + { str = str }]
+		;	let ("0") = ["\n", lex + { str = str }]
+			let ("r") = ["\r", lex + { str = str }]
+			let ("x") = token_die(lexer_fd(lex),
+							"hexidecimal escape characters not implemented yet")
+							
+			let (x : indexof("\\\"\'", x) >= 0) = [x, lex + { str = str }]
+			let (w) = token_die(lexer_fd(lex),
+							"invalid escape sequence in string literal")
+		}
+
+let lexer_parse_string_iter (lex, q, buf) =
+	with ([c, str..] = lex::str, lex = lex + { str = str })
+	with ([lex, c, func] = c -> @{
 			let ("") =
-				token_die({ line = lex::line }, 
+				token_die(lexer_fd(lex), 
 					"expected closing " + q + " before <eof>")
+					
 			let (c == q) =
-				["", @(lex, q, buf) =
-						[buf, lex] ]
+				[lex, "", @(lex, q, buf) = [buf, lex] ]
+				
+			let ("\\") =
+				with ([c, lex] = lexer_escape(lex))
+					[lex, c, lexer_parse_string_iter]
+			
 			let (c) =
-				[c, lexer_parse_string_iter] })
-		func(lex + { str = tl lex::str }, q, buf + c)
+				[lex, c, lexer_parse_string_iter] })
+		func(lex, q, buf + c)
 
 
+		
+		
+		
+		
+		
 
 let lexer_advance (lex : hd lex::str -> is_space?) =
 	lex -> lexer_trim -> lexer_advance
@@ -141,7 +181,7 @@ let token_is_unary? (tok) =
 	indexof([ "-", "!", "hd", "tl" ], tok) >= 0
 let token_is_expression? (tok) =
 	(tok -> token_is_unary?) or
-	indexof([ "<symbol>", "<number>", "<string>", "(", "true", "false" ], tok) >= 0
+	indexof([ "<symbol>", "<number>", "<string>", "(", "[", "true", "false" ], tok) >= 0
 let token_die (tok, msg) =
 	die("xy compiler error " + lexer_fd_text(tok) + "\n"
 	    "    " + msg)

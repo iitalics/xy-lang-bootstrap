@@ -6,7 +6,7 @@ use "src/expression.xy"
 use "src/parser.xy"
 
 
-let version_info () = "version 0.4.2 beta (xy bootstrap)"
+let version_info () = "version 0.4.3 beta (xy bootstrap)"
 let compile_info () = "last modified: may 25, 2014"
 
 

@@ -1,0 +1,24 @@
+
+
+
+let parse_list (toks : (hd toks)::tok == "]") =
+	parse_list_finish(tl toks, [])
+
+let .. (toks) =
+	parse_list_iter(toks, [])
+
+let parse_list_iter (toks, a) =
+	with ([exp, toks] = parse_exp(toks),
+			a = a + [exp])
+		((hd toks)::tok -> @{
+			let (",") =
+				parse_list_iter
+			let ("]") =
+				parse_list_finish
+			
+			let () =
+				token_die(hd toks, "expected ',' or ']', got '" + (hd toks)::tok + "'") })
+		(tl toks, a)
+
+let parse_list_finish (toks, a) = 
+	[expression_list(a), toks]
