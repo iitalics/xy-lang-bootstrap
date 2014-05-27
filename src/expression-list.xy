@@ -30,7 +30,6 @@ let expression_list (items) =
 				{ constant = true,
 				  eval = @() =
 					with (items = items $ t = hd (t::eval()))
-						display("items = ", items, "\n") +
 						[ items ],
 				  compile = f }
 		}
