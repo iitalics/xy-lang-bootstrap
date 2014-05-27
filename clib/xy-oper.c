@@ -23,10 +23,11 @@ static const char* value_type_name (enum xy_value_type t)
 
 enum compare
 {
-	compare_none = 0,
-	compare_equal = 1,
-	compare_less = 0,
-	compare_greater = 2
+	compare_equal =		1,
+	compare_less = 		2,
+	compare_greater = 	4,
+	
+	compare_none = 		2 | 4
 };
 
 
@@ -293,6 +294,7 @@ bool xy_oper_gr (xy_value_t* o, xy_value_t* a, xy_value_t* b, xy_err_string_t* e
 	{
 		// a > b   ~=   !(a <= b)
 		xy_value_set_bool(o, !(compare(a, b) & (compare_less | compare_equal)));
+		
 		return true;
 	}
 	

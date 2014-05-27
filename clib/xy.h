@@ -2,7 +2,7 @@
 #define XY_LIB_H_INCLUDED
 
 /**    xy-lang runtime library
- **  version 1.1.0
+ **  version 1.1.1
  **  last modified:  may 18, 2014
  **/
 
