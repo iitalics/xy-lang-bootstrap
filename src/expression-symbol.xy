@@ -4,7 +4,7 @@ let closure_code (o, i, d) =
 
 
 let expression_symbol (tok) =
-	@(o, compiler) =
+	(@(o, compiler) =
 		with ([i, d] = closure_find(compiler::closure, tok::sym))
 			i -> @{
 				let (-1) =
@@ -13,10 +13,11 @@ let expression_symbol (tok) =
 							", " + name + ", NULL);\n",
 						compiler]
 				let (i) =
-					[closure_code(o, i, d), compiler] }
+					[closure_code(o, i, d), compiler] })
+	-> expression_no_const
 ;
 
 
 let expression_closure_index (i, d) =
-	@(o, compiler) =
-		[closure_code(o, i, d), compiler]
+	(@(o, compiler) =
+		[closure_code(o, i, d), compiler]) -> expression_no_const

@@ -1,13 +1,13 @@
 use "src/util.xy"
 use "src/lexer.xy"
 use "src/compiler.xy"
-use "src/functions.xy"
 use "src/expression.xy"
+use "src/functions.xy"
 use "src/parser.xy"
 
 
-let version_info () = "version 0.4.3 beta (xy bootstrap)"
-let compile_info () = "last modified: may 25, 2014"
+let version_info () = "version 0.5.0 beta (xy bootstrap)"
+let compile_info () = "last modified: may 26, 2014"
 
 
 let help_text () =

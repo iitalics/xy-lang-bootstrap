@@ -3,20 +3,34 @@
 
 
 let expression_list ([]) =
-	@(o, compiler) =
-		["\txy_value_set_list_empty(" + o + ");\n", compiler]
+	{ constant = true, primitive = true,
+	  eval = @() = [],
+	  compile = @(o, compiler) =
+		["\txy_value_set_list_empty(" + o + ");\n", compiler] }
 	
 let expression_list (items) =
-	@(o, compiler) =
+	with (f = @(o, compiler) =
 		with ([a, compiler] = compiler_a_push(compiler, length(items)))
 		with ([_, items_code, compiler] = 
 				foldl(@(_, e) =
 					with ([i, all, compiler] = _)
-					with ([code, compiler] = e(a . i, compiler))
+					with ([code, compiler] = (e -> optimize)::compile(a . i, compiler))
 						[i + 1, all + code, compiler],
 				[0, "", compiler],
 				items))
 		with (compiler = compiler_a_pop(compiler, length(items)))
 			[items_code +
 				"\txy_value_set_list_basic(" + o +
-				", " + hd a + ", " + length(items) + ");\n", compiler]
+				", " + hd a + ", " + length(items) + ");\n", compiler])
+	with (const = foldl(&and, true, items $ t = t::constant))
+		const -> @{
+			let (false) = f -> expression_no_const
+			
+			let () =
+				{ constant = true,
+				  eval = @() =
+					with (items = items $ t = hd (t::eval()))
+						display("items = ", items, "\n") +
+						[ items ],
+				  compile = f }
+		}

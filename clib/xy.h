@@ -3,7 +3,7 @@
 
 /**    xy-lang runtime library
  **  version 1.1.1
- **  last modified:  may 18, 2014
+ **  last modified:  may 26, 2014
  **/
 
 

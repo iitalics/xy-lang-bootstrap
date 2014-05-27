@@ -1,4 +1,11 @@
+
 use "src/expression-const.xy"
+use "src/optimizer.xy"
+
+let expression_no_const (f) =
+	{ constant = false,
+	  compile = f }
+
 use "src/expression-call.xy"
 use "src/expression-binary.xy"
 use "src/expression-symbol.xy"

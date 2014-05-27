@@ -2,24 +2,31 @@
 
 
 let expression_void () =
-	@(o, compiler) =
+	{ constant = true, primitive = true,
+	  eval = @() = [()],
+	  compile = @(o, compiler) =
 		["\txy_value_set_void(" + o + ");\n",
-		compiler]
+		compiler] }
 
 let expression_number (tok) =
-	@(o, compiler) =
+	{ constant = true, primitive = true,
+	  eval = @() = [tok::num],
+	  compile = @(o, compiler) =
 		["\txy_value_set_number(" + o + ", " + (tok::num -> string) + ");\n",
-		compiler]
+		compiler] }
 
 
 let expression_bool (tok) =
-	@(o, compiler) =
-		["\t" +
-			(tok::tok -> @{
-				let ("true")  = "xy_value_set_bool_true"
-				let ("false") = "xy_value_set_bool_false" })
-			+ "(" + o + ");\n",
-		compiler]
+	with (b = (tok::tok == "true"))
+		{ constant = true, primitive = true,
+		  eval = @() = b,
+		  compile = @(o, compiler) =
+			["\t" +
+				(b -> @{
+					let (true)  = "xy_value_set_bool_true"
+					let (false) = "xy_value_set_bool_false" })
+				+ "(" + o + ");\n",
+			compiler] }
 
 let char_escape
 	   ("\n") = "\\n"
@@ -35,9 +42,24 @@ let .. (str, out) =
 		out + char_escape(hd str))
 
 let expression_string (tok) =
-	@(o, compiler) =
+	{ constant = true, primitve = true,
+	  eval = @() = tok::str,
+	  compile = @(o, compiler) =
 		["\txy_value_set_string_c(" + o + ", "
 			; TODO: escape chars
 			"\"" + str_escape(tok::str, "") + "\""
 			");\n",
-		compiler]
+		compiler] }
+
+;
+
+
+
+let expression_const
+	   (q -> number?) = { num = q } -> expression_number
+let .. (q -> string?) = { str = q } -> expression_string
+let .. (true) = { tok = "true" } -> expression_bool
+let .. (false) = { tok = "false" } -> expression_bool
+let .. (()) = expression_void()
+let .. (q -> list?) =
+	(q $ t = t -> expression_const) -> expression_list

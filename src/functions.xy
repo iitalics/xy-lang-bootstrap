@@ -29,7 +29,7 @@ let func_body_compile (body, compiler) =
 						body::args $ a = a::name))
 	with ([args_code, args_brackets, compiler] =
 			func_body_args_compile(body::args, compiler))
-	with ([body_code, compiler] = body::body("o", compiler))
+	with ([body_code, compiler] = (body::body -> optimize)::compile("o", compiler))
 	with (compiler = compiler -> compiler_closure_pop)
 		[args_code + body_code +
 			or_nil(!(body::args -> func_body_args_no_cond?), "\tgoto success;\n") +

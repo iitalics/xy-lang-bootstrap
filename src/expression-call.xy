@@ -3,14 +3,14 @@
 
 
 let expression_call (func, args) =
-	@(o, compiler) =
+	(@(o, compiler) =
 		with (accu_size = 1 + length(args))
 		with ([accu, compiler] = compiler_a_push(compiler, accu_size))
-		with ([func_code, compiler] = func(hd accu, compiler))
+		with ([func_code, compiler] = (func -> optimize)::compile(hd accu, compiler))
 		with ([args_code, compiler] =
 			foldl(@(_, arg) =
 					with ([all, compiler, accu] = _)
-					with ([code, compiler] = arg(hd accu, compiler))
+					with ([code, compiler] = (arg -> optimize)::compile(hd accu, compiler))
 						[all + code, compiler, tl accu],
 				["", compiler, tl accu], args))
 		with (compiler = compiler_a_pop(compiler, accu_size))
@@ -34,4 +34,5 @@ let expression_call (func, args) =
 			let (o) =
 				[z_code + call_code,
 				compiler + 
-					{ args_case = true, fail_case = true }] }
+					{ args_case = true, fail_case = true }] })
+	-> expression_no_const
