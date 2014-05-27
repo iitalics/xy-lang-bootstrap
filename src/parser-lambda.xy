@@ -36,3 +36,10 @@ let parse_lambda_mini (toks : (hd toks)::tok -> token_is_binary?) =
 		toks]
 let .. (toks) =
 	parse_unexpect(hd toks)
+
+let parse_lambda_binary (toks : (hd toks)::tok -> token_is_binary?) =
+	with ([op_tok, toks..] = toks)
+		[op_tok::tok -> expression_binary_lambda,
+		toks]
+let .. (toks) =
+	parse_unexpect(hd toks)

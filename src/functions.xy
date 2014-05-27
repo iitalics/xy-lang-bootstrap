@@ -16,7 +16,7 @@ let .. (args, compiler) =
 			let (_, arg) =
 				with ([all, brackets, compiler] = _)
 				with ([z, compiler] = compiler_a_push(compiler, 1))
-				with ([code, compiler] = arg::cond(hd z, compiler))
+				with ([code, compiler] = (arg::cond -> optimize)::compile(hd z, compiler))
 				with (compiler = compiler_a_pop(compiler, 1))
 					[all + code +
 						"\tif (xy_value_condition(" + hd z + ")) {\n",

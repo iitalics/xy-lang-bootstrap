@@ -261,7 +261,6 @@ XYLIB bool xy_oper_eql (xy_value_t*, xy_value_t* a, xy_value_t* b, xy_err_string
 XYLIB bool xy_oper_neq (xy_value_t*, xy_value_t* a, xy_value_t* b, xy_err_string_t*); // a != b
 XYLIB bool xy_oper_gre (xy_value_t*, xy_value_t* a, xy_value_t* b, xy_err_string_t*); // a >= b
 XYLIB bool xy_oper_lse (xy_value_t*, xy_value_t* a, xy_value_t* b, xy_err_string_t*); // a <= b
-
 // TODO: lazy evaluate these in the compiler
 XYLIB bool xy_oper_or (xy_value_t*, xy_value_t* a, xy_value_t* b, xy_err_string_t*);  // a or b
 XYLIB bool xy_oper_and (xy_value_t*, xy_value_t* a, xy_value_t* b, xy_err_string_t*); // a and b
@@ -273,6 +272,24 @@ XYLIB bool xy_u_oper_tl (xy_value_t*, xy_value_t* x, xy_err_string_t*);  // tl x
 
 
 XYLIB bool xy_call (xy_value_t* out, xy_value_t* func, xy_arg_list_t*, xy_err_string_t*); // out = func(args)
+
+
+XYLIB bool xy_oper_pls_lambda (xy_value_t*, xy_arg_list_t*, xy_closure_t*, xy_err_string_t*);
+XYLIB bool xy_oper_min_lambda (xy_value_t*, xy_arg_list_t*, xy_closure_t*, xy_err_string_t*);
+XYLIB bool xy_oper_mul_lambda (xy_value_t*, xy_arg_list_t*, xy_closure_t*, xy_err_string_t*);
+XYLIB bool xy_oper_div_lambda (xy_value_t*, xy_arg_list_t*, xy_closure_t*, xy_err_string_t*);
+XYLIB bool xy_oper_exp_lambda (xy_value_t*, xy_arg_list_t*, xy_closure_t*, xy_err_string_t*);
+XYLIB bool xy_oper_gr_lambda  (xy_value_t*, xy_arg_list_t*, xy_closure_t*, xy_err_string_t*);
+XYLIB bool xy_oper_ls_lambda  (xy_value_t*, xy_arg_list_t*, xy_closure_t*, xy_err_string_t*);
+XYLIB bool xy_oper_dot_lambda (xy_value_t*, xy_arg_list_t*, xy_closure_t*, xy_err_string_t*);
+XYLIB bool xy_oper_seq_lambda (xy_value_t*, xy_arg_list_t*, xy_closure_t*, xy_err_string_t*);
+XYLIB bool xy_oper_eql_lambda (xy_value_t*, xy_arg_list_t*, xy_closure_t*, xy_err_string_t*);
+XYLIB bool xy_oper_neq_lambda (xy_value_t*, xy_arg_list_t*, xy_closure_t*, xy_err_string_t*);
+XYLIB bool xy_oper_gre_lambda (xy_value_t*, xy_arg_list_t*, xy_closure_t*, xy_err_string_t*);
+XYLIB bool xy_oper_lse_lambda (xy_value_t*, xy_arg_list_t*, xy_closure_t*, xy_err_string_t*);
+XYLIB bool xy_oper_or_lambda  (xy_value_t*, xy_arg_list_t*, xy_closure_t*, xy_err_string_t*);
+XYLIB bool xy_oper_and_lambda (xy_value_t*, xy_arg_list_t*, xy_closure_t*, xy_err_string_t*);
+
 
 
 

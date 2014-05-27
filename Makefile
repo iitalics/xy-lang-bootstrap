@@ -2,10 +2,10 @@ XY=xy.exe src/main.xy
 XYFLAGS=-t
 
 CC=gcc
-CFLAGS=-Iclib
+CFLAGS=-Iclib -O3
 
 LINK=gcc
-LFLAGS=
+LFLAGS=-s
 
 PROGRAM=test-file.exe
 SOURCE=test-file.xy

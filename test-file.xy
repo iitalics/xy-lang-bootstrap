@@ -1,2 +1,10 @@
-let main () = 
-	tl [3, 2, 3, 4, 5]
+
+let foldl (f, z, []) = z
+let .. (f, z, a) =
+	foldl(f, f(z, hd a), tl a)
+
+let fact (n) =
+	foldl(&*, 1, 2 .. n)
+	
+let main () =
+	5 -> fact

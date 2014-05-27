@@ -6,7 +6,7 @@ use "src/functions.xy"
 use "src/parser.xy"
 
 
-let version_info () = "version 0.5.0 beta (xy bootstrap)"
+let version_info () = "version 0.5.1 beta (xy bootstrap)"
 let compile_info () = "last modified: may 26, 2014"
 
 

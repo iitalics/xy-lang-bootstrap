@@ -11,7 +11,6 @@ and the compiler itself is still missing many important features
 Compiler Features To Be Implemented
 ----------------
 * lazy-evaluated `and` and `or` expressions
-* `&OPERATOR` lambdas
 * `with` expressions
 * list comprehension (`$` syntax)
 * maps

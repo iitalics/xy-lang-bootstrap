@@ -3,7 +3,7 @@ CFLAGS=-Wall -O3
 
 OBJECTS=xy-other.o xy-list.o xy-string.o \
 		xy-closure.o xy-gc.o xy-oper.o \
-		xy-value.o xy-main.o
+		xy-value.o xy-main.o xy-oper-lambda.o 
 
 OUTPUT=libxy.a
 

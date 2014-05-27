@@ -128,6 +128,23 @@ compare (xy_value_t* a, xy_value_t* b)
 }
 
 
+// TODO: lazy ranges
+void range (xy_value_t* o, int s, int e)
+{
+	if (s >= e)
+		xy_value_set_list_empty(o);
+	else
+	{
+		const int len = e - s + 1;
+		int i;
+		
+		xy_value_t values[len];
+		for (i = 0; i < len; i++)
+			xy_value_set_number(values + i, s + i);
+		
+		xy_value_set_list_basic(o, values, len);
+	}
+}
 
 
 
@@ -353,6 +370,13 @@ bool xy_oper_seq (xy_value_t* o, xy_value_t* a, xy_value_t* b, xy_err_string_t* 
 		else // if (type == <list>)
 			xy_value_set_list_sublist(o, a->list, index);
 		
+		return true;
+	}
+	
+	if (xy_value_is_type(a, xy_value_type_int) &&
+			xy_value_is_type(b, xy_value_type_int))
+	{
+		range(o, (int)(a->num), (int)(b->num));
 		return true;
 	}
 	

@@ -52,14 +52,6 @@ let .. ("tl") = @(y) = tl y
 
 
 
-let expression_binary_constant (a, op, b, f, op_f) =
-	{ constant = true,
-	  eval = @() =
-	    with ([a_e] = a::eval(), [b_e] = b::eval())
-			[op_f(a_e, b_e)],
-	  compile = f }
-		
-
 let expression_binary (a, "->", b) =
 	expression_call(b, [a])
 ; let .. (a, "and", b) =
@@ -69,21 +61,19 @@ let .. (a, op, b) =
 	with (f = @(o, compiler) =
 		with ([z, compiler] = compiler_a_push(compiler, 2))
 		with (a = a -> optimize, b = b ->optimize)
-		with ([a_code, compiler] = (a)::compile(z . 0, compiler))
-		with ([b_code, compiler] = (b)::compile(z . 1, compiler))
+		with ([a_code, compiler] = a::compile(z . 0, compiler))
+		with ([b_code, compiler] = b::compile(z . 1, compiler))
 		with (compiler = compiler_a_pop(compiler, 2))
 			[a_code + b_code +
 				"\tif (!" + binary_op_string(op) +
 				"(" + o + ", " + (z . 0) + ", " + (z . 1) + ", e))\n" +
 				compiler_fail_code(),
 			compiler + { fail_case = true }])
-	with (op_f = op -> binary_op_func)
-		op_f -> @{
-			let (op_f : (a::constant and b::constant)) =
-				expression_binary_constant(a, op, b, f, op_f)
-			
-			let (_) = expression_no_const(f)
-		}
+	{ constant = a::constant and b::constant,
+	  eval = @() =
+	    with ([a_e] = a::eval(), [b_e] = b::eval())
+			[binary_op_func(op)(a_e, b_e)],
+	  compile = f }
 						
 				
 ;

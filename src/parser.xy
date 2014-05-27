@@ -33,36 +33,40 @@ use "src/parser-lambda.xy"
 use "src/parser-list.xy"
 
 let parse_single (toks) =
-	with ([e, toks] = (hd toks)::tok -> @{
+	with ([head, toks..] = toks)
+	with ([e, toks] = head::tok -> @{
 				let ("<number>") =
-					[(hd toks) -> expression_number, tl toks]
+					[head -> expression_number, toks]
 
 				let ("<symbol>") =
-					[(hd toks) -> expression_symbol, tl toks]
+					[head -> expression_symbol, toks]
 
 				let ("<string>") =
-					[(hd toks) -> expression_string, tl toks]
+					[head -> expression_string, toks]
 
 				let ("(") =
-					parse_single_paren(tl toks)
+					toks -> parse_single_paren
 					
 				let ("@") =
-					parse_lambda(tl toks)
+					toks -> parse_lambda
+				
+				let ("&") =
+					toks -> parse_lambda_binary
 				
 				let ("`") =
-					parse_lambda_mini(tl toks)
+					toks -> parse_lambda_mini
 				
 				let ("[") =
-					parse_list(tl toks)
+					toks -> parse_list
 
 				let (t : t == "true" or t == "false") =
-					[expression_bool(hd toks), tl toks]
+					[expression_bool(head), toks]
 
 				let (t -> token_is_unary?) =
-					with ([e, toks] = tl toks -> parse_single)
+					with ([e, toks] = toks -> parse_single)
 						[expression_unary(t, e), toks]
 
-				let (bad) = parse_unexpect(hd toks)
+				let (bad) = parse_unexpect(head)
 			})
 		parse_prologue(e, toks)
 ;
